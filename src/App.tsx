@@ -6,6 +6,7 @@ import { Orders } from './components/Orders';
 import { Production } from './components/Production';
 import { Settings } from './components/Settings';
 import { Clients } from './components/Clients';
+import ConfirmModal from './components/ConfirmModal';
 import { PricingConfig, Order, Client, InventoryItem } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
@@ -156,6 +157,19 @@ const MainApp: React.FC = () => {
     }
   });
 
+  // Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
   // Fetch data from Supabase
   useEffect(() => {
     if (!user) return;
@@ -201,7 +215,6 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddClient = async (client: Client) => {
-    // Remove totalOrders e id (se for nulo/inválido) para deixar o Supabase gerar o UUID
     const { totalOrders, id, ...dbClient } = client;
     const { data, error } = await supabase.from('clients').insert([{ ...dbClient, user_id: user?.id }]).select();
     
@@ -229,16 +242,22 @@ const MainApp: React.FC = () => {
     toast.success('Cliente atualizado!');
   };
 
-  const handleDeleteClient = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cliente?')) {
-      const { error } = await supabase.from('clients').delete().eq('id', id);
-      if (error) {
-        toast.error('Erro ao excluir cliente');
-        return;
+  const handleDeleteClient = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Cliente',
+      message: 'Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.',
+      onConfirm: async () => {
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+        if (error) {
+          toast.error('Erro ao excluir cliente');
+        } else {
+          setClients(clients.filter(c => c.id !== id));
+          toast.success('Cliente removido');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
-      setClients(clients.filter(c => c.id !== id));
-      toast.success('Cliente removido');
-    }
+    });
   };
 
   const handleAddItem = async (item: any) => {
@@ -267,16 +286,22 @@ const MainApp: React.FC = () => {
     toast.success('Estoque atualizado');
   };
 
-  const handleDeleteItem = async (id: string) => {
-    if (confirm('Tem certeza?')) {
-      const { error } = await supabase.from('inventory').delete().eq('id', id);
-      if (error) {
-        toast.error('Erro ao excluir item');
-        return;
+  const handleDeleteItem = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Remover do Estoque',
+      message: 'Deseja realmente remover este item do estoque?',
+      onConfirm: async () => {
+        const { error } = await supabase.from('inventory').delete().eq('id', id);
+        if (error) {
+          toast.error('Erro ao excluir item');
+        } else {
+          setInventory(inventory.filter(i => i.id !== id));
+          toast.success('Item removido');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
-      setInventory(inventory.filter(i => i.id !== id));
-      toast.success('Item removido');
-    }
+    });
   };
 
   const handleAddOrder = async (order: Order) => {
@@ -318,16 +343,22 @@ const MainApp: React.FC = () => {
     toast.success('Pedido atualizado');
   };
 
-  const handleDeleteOrder = async (id: string) => {
-    if (confirm('Tem certeza?')) {
-      const { error } = await supabase.from('orders').delete().eq('id', id);
-      if (error) {
-        toast.error('Erro ao excluir pedido');
-        return;
+  const handleDeleteOrder = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Pedido',
+      message: 'Tem certeza que deseja excluir este pedido? Esta ação é irreversível.',
+      onConfirm: async () => {
+        const { error } = await supabase.from('orders').delete().eq('id', id);
+        if (error) {
+          toast.error('Erro ao excluir pedido');
+        } else {
+          setOrders(orders.filter(o => o.id !== id));
+          toast.success('Pedido removido');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
-      setOrders(orders.filter(o => o.id !== id));
-      toast.success('Pedido removido');
-    }
+    });
   };
 
   const renderView = () => {
@@ -349,6 +380,15 @@ const MainApp: React.FC = () => {
         success: { iconTheme: { primary: '#10b981', secondary: '#f8fafc' } },
         error: { iconTheme: { primary: '#ef4444', secondary: '#f8fafc' } }
       }} />
+      
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
+
       {isSidebarOpen && <div className="fixed inset-0 bg-black/60 z-20 lg:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-200 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="h-full flex flex-col">
