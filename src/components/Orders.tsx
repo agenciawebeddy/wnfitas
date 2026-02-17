@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
-import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client } from '../types';
+import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem } from '../types';
 
 interface OrdersProps {
   onNavigate: (view: string) => void;
   pricingConfig: PricingConfig;
   orders: Order[];
   clients: Client[];
+  inventory: InventoryItem[];
   onAddOrder: (order: Order) => void;
   onUpdateOrder: (order: Order) => void;
   onDeleteOrder: (id: string) => void;
@@ -41,7 +42,7 @@ const getStatusConfig = (status: OrderStatus) => {
   }
 };
 
-export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
+export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -109,6 +110,55 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setUnitPrice(parseFloat(finalPrice.toFixed(3)));
   }, [width, finishings, pricingConfig, quantity]);
 
+  // Stock Validation Logic
+  const [stockValidation, setStockValidation] = useState<{ isValid: boolean; missingItems: string[] }>({ isValid: true, missingItems: [] });
+
+  useEffect(() => {
+    const missing: string[] = [];
+    
+    // 1. Check Tape
+    const tapeName = `Fita Poliéster ${width} Branca`;
+    const tapeItem = inventory.find(i => i.name.toLowerCase().includes(tapeName.toLowerCase()));
+    if (!tapeItem || tapeItem.quantity < calc.totalLinearMeters) {
+      missing.push(`${tapeName} (Necessário: ${calc.totalLinearMeters}m)`);
+    }
+
+    // 2. Check Paper
+    const paperName = `Papel Sublimático Bobina ${width === '25mm' ? '20cm' : '15cm'}`;
+    const paperItem = inventory.find(i => i.name.toLowerCase().includes(paperName.toLowerCase()));
+    if (!paperItem || paperItem.quantity < calc.paperConsumptionMeters) {
+      missing.push(`${paperName} (Necessário: ${calc.paperConsumptionMeters}m)`);
+    }
+
+    // 3. Check Ink
+    const inkItem = inventory.find(i => i.name.toLowerCase().includes('tinta sublimática'));
+    if (!inkItem || inkItem.quantity < calc.inkConsumptionLitres) {
+      missing.push(`Tinta Sublimática (Necessário: ${calc.inkConsumptionLitres}L)`);
+    }
+
+    // 4. Check Finishings
+    pricingConfig.finishings.forEach(f => {
+      if (finishings[f.name]?.selected) {
+        let stockName = '';
+        if (f.name === 'mosquetao') stockName = 'Mosquetão Padrão Niquel';
+        else if (f.name === 'trava') stockName = 'Trava de Segurança';
+        else if (f.name === 'jacare') stockName = 'Jacaré Niquelado';
+        else stockName = f.name;
+
+        const stockItem = inventory.find(i => i.name.toLowerCase().includes(stockName.toLowerCase()));
+        const needed = finishings[f.name].quantity * quantity;
+        if (!stockItem || stockItem.quantity < needed) {
+          missing.push(`${stockName} (Necessário: ${needed} un)`);
+        }
+      }
+    });
+
+    setStockValidation({
+      isValid: missing.length === 0,
+      missingItems: missing
+    });
+  }, [width, quantity, calc, finishings, inventory, pricingConfig]);
+
   const toggleFinishing = (type: FinishingType) => {
     setFinishings(prev => ({
       ...prev,
@@ -159,6 +209,12 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       alert("Por favor, selecione um cliente.");
       return;
     }
+
+    if (!stockValidation.isValid) {
+      alert("Não é possível gerar o pedido. Itens insuficientes no estoque:\n\n" + stockValidation.missingItems.join('\n'));
+      return;
+    }
+
     const finalStatus = forceStatus || currentStatus;
     const activeFinishings: OrderFinishing[] = [];
     pricingConfig.finishings.forEach(item => {
@@ -269,7 +325,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Largura Fita</label>
+                  <label className="block text-xs font-medium text-slate-500 uppercase mb-2">Largura Fita</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['15mm', '20mm', '25mm'] as LanyardWidth[]).map(w => (
                       <button
@@ -360,9 +416,25 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
               </div>
 
               <div className="pt-6">
+                {!stockValidation.isValid && (
+                  <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-red-400 uppercase mb-1">Estoque Insuficiente</p>
+                      <ul className="text-[11px] text-red-200/70 list-disc list-inside">
+                        {stockValidation.missingItems.map((item, i) => <li key={i}>{item}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                )}
                 <button 
                   onClick={() => handleSave()}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2"
+                  disabled={!stockValidation.isValid}
+                  className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
+                    ${stockValidation.isValid 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-900/20' 
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'}
+                  `}
                 >
                   <Save className="w-5 h-5" /> {editingId ? 'Salvar Alterações' : 'Gerar Pedido / Orçamento'}
                 </button>
