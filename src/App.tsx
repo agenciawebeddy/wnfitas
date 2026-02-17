@@ -316,7 +316,7 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddOrder = async (order: Order) => {
-    // Mapeia campos camelCase para snake_case do banco
+    // 1. Salvar o pedido no banco
     const { id, clientId, clientName, totalValue, opNumber, ...rest } = order as any;
     const { data, error } = await supabase.from('orders').insert([{ 
       ...rest, 
@@ -333,8 +333,58 @@ const MainApp: React.FC = () => {
     }
     
     if (data) {
-      setOrders([mapOrder(data[0]), ...orders]);
+      const newOrder = mapOrder(data[0]);
+      setOrders([newOrder, ...orders]);
       toast.success('Pedido criado com sucesso!');
+
+      // 2. Realizar baixa automática de estoque
+      const item = order.items[0];
+      const calc = order.calculation;
+      
+      // Mapeamento de itens para baixa
+      const deductions: { name: string, qty: number }[] = [
+        // Fita
+        { name: `Fita Poliéster ${item.width} Branca`, qty: calc.totalLinearMeters },
+        // Papel
+        { name: `Papel Sublimático Bobina ${item.width === '25mm' ? '20cm' : '15cm'}`, qty: calc.paperConsumptionMeters },
+        // Tinta (Média aproximada)
+        { name: 'Tinta Sublimática', qty: calc.inkConsumptionLitres }
+      ];
+
+      // Acessórios
+      item.finishings.forEach(f => {
+        // Tenta encontrar o nome amigável no estoque
+        let stockName = '';
+        if (f.type === 'mosquetao') stockName = 'Mosquetão Padrão Niquel';
+        else if (f.type === 'trava') stockName = 'Trava de Segurança';
+        else if (f.type === 'jacare') stockName = 'Jacaré Niquelado';
+        else stockName = f.type; // Fallback para o nome do tipo
+
+        deductions.push({ name: stockName, qty: f.quantity * item.quantity });
+      });
+
+      // Executar as baixas
+      for (const deduction of deductions) {
+        const stockItem = inventory.find(i => i.name.toLowerCase().includes(deduction.name.toLowerCase()));
+        if (stockItem) {
+          const newQty = Math.max(0, stockItem.quantity - deduction.qty);
+          await supabase.from('inventory').update({ quantity: newQty }).eq('id', stockItem.id);
+          
+          // Alerta de estoque baixo
+          if (newQty <= stockItem.minStock) {
+            toast(`Estoque crítico: ${stockItem.name}`, { icon: '⚠️', duration: 5000 });
+          }
+        }
+      }
+
+      // Atualizar estado local do inventário após as baixas
+      const { data: updatedInventory } = await supabase.from('inventory').select('*').order('name');
+      if (updatedInventory) {
+        setInventory(updatedInventory.map((item: any) => ({
+          ...item,
+          minStock: item.min_stock
+        })));
+      }
     }
   };
 
