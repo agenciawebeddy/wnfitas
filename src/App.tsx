@@ -170,6 +170,15 @@ const MainApp: React.FC = () => {
     onConfirm: () => {},
   });
 
+  // Helper to map DB order to Frontend order
+  const mapOrder = (o: any): Order => ({
+    ...o,
+    clientId: o.client_id,
+    clientName: o.client_name,
+    opNumber: o.op_number,
+    totalValue: o.total_value
+  });
+
   // Fetch data from Supabase
   useEffect(() => {
     if (!user) return;
@@ -192,7 +201,9 @@ const MainApp: React.FC = () => {
 
       // Fetch Orders
       const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (ordersData) setOrders(ordersData as any);
+      if (ordersData) {
+        setOrders(ordersData.map(mapOrder));
+      }
 
       // Fetch Pricing Config
       const { data: configData } = await supabase.from('pricing_configs').select('config').eq('user_id', user.id).single();
@@ -322,7 +333,7 @@ const MainApp: React.FC = () => {
     }
     
     if (data) {
-      setOrders([data[0] as any, ...orders]);
+      setOrders([mapOrder(data[0]), ...orders]);
       toast.success('Pedido criado com sucesso!');
     }
   };
