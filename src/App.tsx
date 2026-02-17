@@ -8,9 +8,9 @@ import { Clients } from './components/Clients';
 import { PricingConfig, Order, Client, InventoryItem } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
-import { MOCK_INVENTORY, MOCK_ORDERS, MOCK_CLIENTS } from './constants';
+import { supabase } from './integrations/supabase/client';
 
-// Inventory Component (Inline as before)
+// Inventory Component (Inline)
 const Inventory: React.FC<{ 
   items: InventoryItem[], 
   onUpdateStock: (id: string, qtyToAdd: number) => void,
@@ -38,13 +38,12 @@ const Inventory: React.FC<{
 
   const handleSaveItem = () => {
     if (!newName) return;
-    const newItem: InventoryItem = {
-      id: `INV-${Date.now()}`,
+    const newItem: any = {
       name: newName,
       category: newCategory,
       quantity: 0,
       unit: newUnit,
-      minStock: newMinStock
+      min_stock: newMinStock
     };
     onAddItem(newItem);
     setIsAdding(false);
@@ -135,9 +134,9 @@ const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
-  const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS);
-  const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>({
     '15mm': 1.20, '20mm': 2.30, '25mm': 2.80,
     finishings: [
@@ -156,21 +155,124 @@ const MainApp: React.FC = () => {
     }
   });
 
-  const handleUpdateStock = (id: string, qtyToAdd: number) => {
-    setInventory(prev => prev.map(item => item.id === id ? { ...item, quantity: item.quantity + qtyToAdd } : item));
+  // Fetch data from Supabase
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      // Fetch Clients
+      const { data: clientsData } = await supabase.from('clients').select('*').order('name');
+      if (clientsData) setClients(clientsData as any);
+
+      // Fetch Inventory
+      const { data: inventoryData } = await supabase.from('inventory').select('*').order('name');
+      if (inventoryData) {
+        setInventory(inventoryData.map((item: any) => ({
+          ...item,
+          minStock: item.min_stock
+        })));
+      }
+
+      // Fetch Orders
+      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (ordersData) setOrders(ordersData as any);
+
+      // Fetch Pricing Config
+      const { data: configData } = await supabase.from('pricing_configs').select('config').eq('user_id', user.id).single();
+      if (configData) setPricingConfig(configData.config as any);
+    };
+
+    fetchData();
+  }, [user]);
+
+  // Persistence Handlers
+  const handleSavePricing = async (newConfig: PricingConfig) => {
+    setPricingConfig(newConfig);
+    await supabase.from('pricing_configs').upsert({
+      user_id: user?.id,
+      config: newConfig,
+      updated_at: new Date().toISOString()
+    });
   };
-  
-  const handleAddItem = (newItem: InventoryItem) => setInventory(prev => [newItem, ...prev]);
-  const handleDeleteItem = (id: string) => setInventory(prev => prev.filter(item => item.id !== id));
+
+  const handleAddClient = async (client: Client) => {
+    const { data, error } = await supabase.from('clients').insert([{ ...client, user_id: user?.id }]).select();
+    if (data) setClients([data[0] as any, ...clients]);
+  };
+
+  const handleUpdateClient = async (client: Client) => {
+    await supabase.from('clients').update(client).eq('id', client.id);
+    setClients(clients.map(c => c.id === client.id ? client : c));
+  };
+
+  const handleDeleteClient = async (id: string) => {
+    if (confirm('Tem certeza?')) {
+      await supabase.from('clients').delete().eq('id', id);
+      setClients(clients.filter(c => c.id !== id));
+    }
+  };
+
+  const handleAddItem = async (item: any) => {
+    const { data } = await supabase.from('inventory').insert([{ ...item, user_id: user?.id }]).select();
+    if (data) {
+      const newItem = { ...data[0], minStock: data[0].min_stock } as any;
+      setInventory([newItem, ...inventory]);
+    }
+  };
+
+  const handleUpdateStock = async (id: string, qtyToAdd: number) => {
+    const item = inventory.find(i => i.id === id);
+    if (!item) return;
+    const newQty = item.quantity + qtyToAdd;
+    await supabase.from('inventory').update({ quantity: newQty }).eq('id', id);
+    setInventory(inventory.map(i => i.id === id ? { ...i, quantity: newQty } : i));
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (confirm('Tem certeza?')) {
+      await supabase.from('inventory').delete().eq('id', id);
+      setInventory(inventory.filter(i => i.id !== id));
+    }
+  };
+
+  const handleAddOrder = async (order: Order) => {
+    const { data } = await supabase.from('orders').insert([{ 
+      ...order, 
+      user_id: user?.id,
+      client_id: order.clientId,
+      client_name: order.clientName,
+      total_value: order.totalValue,
+      op_number: order.opNumber
+    }]).select();
+    if (data) setOrders([data[0] as any, ...orders]);
+  };
+
+  const handleUpdateOrder = async (order: Order) => {
+    await supabase.from('orders').update({
+      ...order,
+      client_id: order.clientId,
+      client_name: order.clientName,
+      total_value: order.totalValue,
+      op_number: order.opNumber
+    }).eq('id', order.id);
+    setOrders(orders.map(o => o.id === order.id ? order : o));
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    if (confirm('Tem certeza?')) {
+      await supabase.from('orders').delete().eq('id', id);
+      setOrders(orders.filter(o => o.id !== id));
+    }
+  };
 
   const renderView = () => {
     switch(currentView) {
       case 'dashboard': return <Dashboard orders={orders} />;
-      case 'orders': return <Orders onNavigate={setCurrentView} pricingConfig={pricingConfig} orders={orders} onAddOrder={o => setOrders([o, ...orders])} onUpdateOrder={o => setOrders(orders.map(x => x.id === o.id ? o : x))} onDeleteOrder={id => setOrders(orders.filter(o => o.id !== id))} />;
+      case 'orders': return <Orders onNavigate={setCurrentView} pricingConfig={pricingConfig} orders={orders} onAddOrder={handleAddOrder} onUpdateOrder={handleUpdateOrder} onDeleteOrder={handleDeleteOrder} />;
       case 'production': return <Production orders={orders} />;
       case 'inventory': return <Inventory items={inventory} onUpdateStock={handleUpdateStock} onAddItem={handleAddItem} onDeleteItem={handleDeleteItem} />;
-      case 'clients': return <Clients clients={clients} onAddClient={c => setClients([c, ...clients])} onUpdateClient={c => setClients(clients.map(x => x.id === c.id ? c : x))} onDeleteClient={id => setClients(clients.filter(c => c.id !== id))} />;
-      case 'settings': return <Settings pricing={pricingConfig} onSave={setPricingConfig} />;
+      case 'clients': return <Clients clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />;
+      case 'settings': return <Settings pricing={pricingConfig} onSave={handleSavePricing} />;
       default: return <Dashboard orders={orders} />;
     }
   };
