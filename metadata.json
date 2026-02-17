@@ -1,0 +1,5 @@
+{
+  "name": "WNFitas",
+  "description": "Sistema de gestão industrial para WNFitas, controlando pedidos, produção, estoque e cálculos de insumos.",
+  "requestFramePermissions": []
+}
