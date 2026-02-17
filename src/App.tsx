@@ -427,13 +427,13 @@ const MainApp: React.FC = () => {
 
   const renderView = () => {
     switch(currentView) {
-      case 'dashboard': return <Dashboard orders={orders} />;
+      case 'dashboard': return <Dashboard orders={orders} inventory={inventory} />;
       case 'orders': return <Orders onNavigate={setCurrentView} pricingConfig={pricingConfig} orders={orders} clients={clients} onAddOrder={handleAddOrder} onUpdateOrder={handleUpdateOrder} onDeleteOrder={handleDeleteOrder} />;
       case 'production': return <Production orders={orders} />;
       case 'inventory': return <Inventory items={inventory} onUpdateStock={handleUpdateStock} onAddItem={handleAddItem} onDeleteItem={handleDeleteItem} />;
       case 'clients': return <Clients clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />;
       case 'settings': return <Settings pricing={pricingConfig} onSave={handleSavePricing} />;
-      default: return <Dashboard orders={orders} />;
+      default: return <Dashboard orders={orders} inventory={inventory} />;
     }
   };
 
