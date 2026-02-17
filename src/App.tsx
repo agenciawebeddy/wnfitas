@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2 } from 'lucide-react';
+import { Toaster, toast } from 'react-hot-toast';
 import { Dashboard } from './components/Dashboard';
 import { Orders } from './components/Orders';
 import { Production } from './components/Production';
@@ -162,7 +163,9 @@ const MainApp: React.FC = () => {
     const fetchData = async () => {
       // Fetch Clients
       const { data: clientsData } = await supabase.from('clients').select('*').order('name');
-      if (clientsData) setClients(clientsData as any);
+      if (clientsData) {
+        setClients(clientsData.map((c: any) => ({ ...c, totalOrders: 0 })));
+      }
 
       // Fetch Inventory
       const { data: inventoryData } = await supabase.from('inventory').select('*').order('name');
@@ -188,35 +191,66 @@ const MainApp: React.FC = () => {
   // Persistence Handlers
   const handleSavePricing = async (newConfig: PricingConfig) => {
     setPricingConfig(newConfig);
-    await supabase.from('pricing_configs').upsert({
+    const { error } = await supabase.from('pricing_configs').upsert({
       user_id: user?.id,
       config: newConfig,
       updated_at: new Date().toISOString()
     });
+    if (error) toast.error('Erro ao salvar configurações');
+    else toast.success('Configurações salvas');
   };
 
   const handleAddClient = async (client: Client) => {
-    const { data, error } = await supabase.from('clients').insert([{ ...client, user_id: user?.id }]).select();
-    if (data) setClients([data[0] as any, ...clients]);
+    // Remove totalOrders as it's not in the DB table
+    const { totalOrders, ...dbClient } = client;
+    const { data, error } = await supabase.from('clients').insert([{ ...dbClient, user_id: user?.id }]).select();
+    
+    if (error) {
+      toast.error('Erro ao cadastrar cliente: ' + error.message);
+      return;
+    }
+    
+    if (data) {
+      setClients([{ ...data[0], totalOrders: 0 } as any, ...clients]);
+      toast.success('Cliente cadastrado com sucesso!');
+    }
   };
 
   const handleUpdateClient = async (client: Client) => {
-    await supabase.from('clients').update(client).eq('id', client.id);
+    const { totalOrders, ...dbClient } = client;
+    const { error } = await supabase.from('clients').update(dbClient).eq('id', client.id);
+    
+    if (error) {
+      toast.error('Erro ao atualizar cliente: ' + error.message);
+      return;
+    }
+    
     setClients(clients.map(c => c.id === client.id ? client : c));
+    toast.success('Cliente atualizado!');
   };
 
   const handleDeleteClient = async (id: string) => {
-    if (confirm('Tem certeza?')) {
-      await supabase.from('clients').delete().eq('id', id);
+    if (confirm('Tem certeza que deseja excluir este cliente?')) {
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) {
+        toast.error('Erro ao excluir cliente');
+        return;
+      }
       setClients(clients.filter(c => c.id !== id));
+      toast.success('Cliente removido');
     }
   };
 
   const handleAddItem = async (item: any) => {
-    const { data } = await supabase.from('inventory').insert([{ ...item, user_id: user?.id }]).select();
+    const { data, error } = await supabase.from('inventory').insert([{ ...item, user_id: user?.id }]).select();
+    if (error) {
+      toast.error('Erro ao adicionar item');
+      return;
+    }
     if (data) {
       const newItem = { ...data[0], minStock: data[0].min_stock } as any;
       setInventory([newItem, ...inventory]);
+      toast.success('Item adicionado ao estoque');
     }
   };
 
@@ -224,19 +258,29 @@ const MainApp: React.FC = () => {
     const item = inventory.find(i => i.id === id);
     if (!item) return;
     const newQty = item.quantity + qtyToAdd;
-    await supabase.from('inventory').update({ quantity: newQty }).eq('id', id);
+    const { error } = await supabase.from('inventory').update({ quantity: newQty }).eq('id', id);
+    if (error) {
+      toast.error('Erro ao atualizar estoque');
+      return;
+    }
     setInventory(inventory.map(i => i.id === id ? { ...i, quantity: newQty } : i));
+    toast.success('Estoque atualizado');
   };
 
   const handleDeleteItem = async (id: string) => {
     if (confirm('Tem certeza?')) {
-      await supabase.from('inventory').delete().eq('id', id);
+      const { error } = await supabase.from('inventory').delete().eq('id', id);
+      if (error) {
+        toast.error('Erro ao excluir item');
+        return;
+      }
       setInventory(inventory.filter(i => i.id !== id));
+      toast.success('Item removido');
     }
   };
 
   const handleAddOrder = async (order: Order) => {
-    const { data } = await supabase.from('orders').insert([{ 
+    const { data, error } = await supabase.from('orders').insert([{ 
       ...order, 
       user_id: user?.id,
       client_id: order.clientId,
@@ -244,24 +288,45 @@ const MainApp: React.FC = () => {
       total_value: order.totalValue,
       op_number: order.opNumber
     }]).select();
-    if (data) setOrders([data[0] as any, ...orders]);
+    
+    if (error) {
+      toast.error('Erro ao criar pedido');
+      return;
+    }
+    
+    if (data) {
+      setOrders([data[0] as any, ...orders]);
+      toast.success('Pedido criado com sucesso!');
+    }
   };
 
   const handleUpdateOrder = async (order: Order) => {
-    await supabase.from('orders').update({
+    const { error } = await supabase.from('orders').update({
       ...order,
       client_id: order.clientId,
       client_name: order.clientName,
       total_value: order.totalValue,
       op_number: order.opNumber
     }).eq('id', order.id);
+    
+    if (error) {
+      toast.error('Erro ao atualizar pedido');
+      return;
+    }
+    
     setOrders(orders.map(o => o.id === order.id ? order : o));
+    toast.success('Pedido atualizado');
   };
 
   const handleDeleteOrder = async (id: string) => {
     if (confirm('Tem certeza?')) {
-      await supabase.from('orders').delete().eq('id', id);
+      const { error } = await supabase.from('orders').delete().eq('id', id);
+      if (error) {
+        toast.error('Erro ao excluir pedido');
+        return;
+      }
       setOrders(orders.filter(o => o.id !== id));
+      toast.success('Pedido removido');
     }
   };
 
@@ -279,6 +344,11 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 font-sans flex overflow-hidden">
+      <Toaster position="top-right" toastOptions={{
+        style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' },
+        success: { iconTheme: { primary: '#10b981', secondary: '#f8fafc' } },
+        error: { iconTheme: { primary: '#ef4444', secondary: '#f8fafc' } }
+      }} />
       {isSidebarOpen && <div className="fixed inset-0 bg-black/60 z-20 lg:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-200 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="h-full flex flex-col">
