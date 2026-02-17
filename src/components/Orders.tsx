@@ -141,14 +141,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       missing.push(`Papel ${paperWidth} insuficiente (${paperItem.quantity}m / Nec: ${calc.paperConsumptionMeters}m)`);
     }
 
-    // 3. Check Ink
-    const inkItem = inventory.find(i => i.category === 'tinta' || i.name.toLowerCase().includes('tinta'));
-    if (!inkItem) {
-      missing.push(`Tinta não encontrada no estoque`);
-    } else if (inkItem.quantity < calc.inkConsumptionLitres) {
-      missing.push(`Tinta insuficiente (${inkItem.quantity}L / Nec: ${calc.inkConsumptionLitres}L)`);
-    }
-
     // 4. Check Finishings
     pricingConfig.finishings.forEach(f => {
       if (finishings[f.name]?.selected) {
@@ -488,10 +480,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
               </div>
 
               <div className="space-y-3 pt-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Consumo de Tinta Estimado</span>
-                  <span className="text-slate-200 font-bold">{calc.inkConsumptionLitres} L</span>
-                </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Custo Total Insumos (Est.)</span>
                   <span className="text-slate-200 font-bold">R$ {formatCurrency(calc.estimatedCost)}</span>

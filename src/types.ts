@@ -1,4 +1,3 @@
-
 export type OrderStatus = 
   | 'orcamento' 
   | 'aprovado' 
@@ -83,7 +82,6 @@ export interface ProductionCalculation {
   paperRows: number;
   paperMetersPerSide: number; // Metragem exata para um lado (sem margem)
   paperConsumptionMeters: number; // Total com margem e ambos os lados
-  inkConsumptionLitres: number;
   estimatedCost: number;
   estimatedTimePlotter: string; // "HH:MM"
   estimatedTimeCalandra: string; // "HH:MM"

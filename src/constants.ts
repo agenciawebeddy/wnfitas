@@ -40,7 +40,6 @@ export const MOCK_ORDERS: Order[] = [
       paperRows: 60,
       paperMetersPerSide: 90,
       paperConsumptionMeters: 189, // (450*2 / 5) * 1.05
-      inkConsumptionLitres: 0.1,
       estimatedCost: 350.00,
       estimatedTimePlotter: '0h 45m',
       estimatedTimeCalandra: '0h 15m'
@@ -69,7 +68,6 @@ export const MOCK_ORDERS: Order[] = [
       paperRows: 50,
       paperMetersPerSide: 180,
       paperConsumptionMeters: 378,
-      inkConsumptionLitres: 0.25,
       estimatedCost: 800.00,
       estimatedTimePlotter: '1h 30m',
       estimatedTimeCalandra: '0h 30m'
@@ -97,7 +95,6 @@ export const MOCK_ORDERS: Order[] = [
       paperRows: 60,
       paperMetersPerSide: 360,
       paperConsumptionMeters: 756,
-      inkConsumptionLitres: 0.5,
       estimatedCost: 1500.00,
       estimatedTimePlotter: '2h 45m',
       estimatedTimeCalandra: '0h 50m'
