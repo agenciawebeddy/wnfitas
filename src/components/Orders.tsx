@@ -116,39 +116,52 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   useEffect(() => {
     const missing: string[] = [];
     
+    // Helper to find item by name or category
+    const findItem = (namePart: string, category: string) => {
+      return inventory.find(i => 
+        i.name.toLowerCase().includes(namePart.toLowerCase()) || 
+        (i.category === category && i.name.toLowerCase().includes(width.toLowerCase()))
+      );
+    };
+
     // 1. Check Tape
-    const tapeName = `Fita Poliéster ${width} Branca`;
-    const tapeItem = inventory.find(i => i.name.toLowerCase().includes(tapeName.toLowerCase()));
-    if (!tapeItem || tapeItem.quantity < calc.totalLinearMeters) {
-      missing.push(`${tapeName} (Necessário: ${calc.totalLinearMeters}m)`);
+    const tapeItem = findItem(`Fita Poliéster ${width}`, 'fita');
+    if (!tapeItem) {
+      missing.push(`Fita ${width} não encontrada no estoque`);
+    } else if (tapeItem.quantity < calc.totalLinearMeters) {
+      missing.push(`Fita ${width} insuficiente (${tapeItem.quantity}m / Nec: ${calc.totalLinearMeters}m)`);
     }
 
     // 2. Check Paper
-    const paperName = `Papel Sublimático Bobina ${width === '25mm' ? '20cm' : '15cm'}`;
-    const paperItem = inventory.find(i => i.name.toLowerCase().includes(paperName.toLowerCase()));
-    if (!paperItem || paperItem.quantity < calc.paperConsumptionMeters) {
-      missing.push(`${paperName} (Necessário: ${calc.paperConsumptionMeters}m)`);
+    const paperWidth = width === '25mm' ? '20cm' : '15cm';
+    const paperItem = inventory.find(i => i.category === 'papel' && i.name.includes(paperWidth));
+    if (!paperItem) {
+      missing.push(`Papel Bobina ${paperWidth} não encontrado`);
+    } else if (paperItem.quantity < calc.paperConsumptionMeters) {
+      missing.push(`Papel ${paperWidth} insuficiente (${paperItem.quantity}m / Nec: ${calc.paperConsumptionMeters}m)`);
     }
 
     // 3. Check Ink
-    const inkItem = inventory.find(i => i.name.toLowerCase().includes('tinta sublimática'));
-    if (!inkItem || inkItem.quantity < calc.inkConsumptionLitres) {
-      missing.push(`Tinta Sublimática (Necessário: ${calc.inkConsumptionLitres}L)`);
+    const inkItem = inventory.find(i => i.category === 'tinta' || i.name.toLowerCase().includes('tinta'));
+    if (!inkItem) {
+      missing.push(`Tinta não encontrada no estoque`);
+    } else if (inkItem.quantity < calc.inkConsumptionLitres) {
+      missing.push(`Tinta insuficiente (${inkItem.quantity}L / Nec: ${calc.inkConsumptionLitres}L)`);
     }
 
     // 4. Check Finishings
     pricingConfig.finishings.forEach(f => {
       if (finishings[f.name]?.selected) {
-        let stockName = '';
-        if (f.name === 'mosquetao') stockName = 'Mosquetão Padrão Niquel';
-        else if (f.name === 'trava') stockName = 'Trava de Segurança';
-        else if (f.name === 'jacare') stockName = 'Jacaré Niquelado';
-        else stockName = f.name;
-
-        const stockItem = inventory.find(i => i.name.toLowerCase().includes(stockName.toLowerCase()));
         const needed = finishings[f.name].quantity * quantity;
-        if (!stockItem || stockItem.quantity < needed) {
-          missing.push(`${stockName} (Necessário: ${needed} un)`);
+        const stockItem = inventory.find(i => 
+          i.name.toLowerCase().includes(f.name.toLowerCase()) || 
+          (i.category === 'acessorio' && i.name.toLowerCase().includes(f.name.toLowerCase()))
+        );
+
+        if (!stockItem) {
+          missing.push(`Acabamento "${f.name}" não encontrado`);
+        } else if (stockItem.quantity < needed) {
+          missing.push(`${stockItem.name} insuficiente (${stockItem.quantity} un / Nec: ${needed} un)`);
         }
       }
     });

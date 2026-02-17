@@ -341,43 +341,45 @@ const MainApp: React.FC = () => {
       const item = order.items[0];
       const calc = order.calculation;
       
-      // Mapeamento de itens para baixa
-      const deductions: { name: string, qty: number }[] = [
+      // Mapeamento de itens para baixa (Lógica flexível)
+      const findStockItem = (namePart: string, category: string) => {
+        return inventory.find(i => 
+          i.name.toLowerCase().includes(namePart.toLowerCase()) || 
+          (i.category === category && i.name.toLowerCase().includes(item.width.toLowerCase()))
+        );
+      };
+
+      const deductions: { item: InventoryItem | undefined, qty: number }[] = [
         // Fita
-        { name: `Fita Poliéster ${item.width} Branca`, qty: calc.totalLinearMeters },
+        { item: findStockItem(`Fita Poliéster ${item.width}`, 'fita'), qty: calc.totalLinearMeters },
         // Papel
-        { name: `Papel Sublimático Bobina ${item.width === '25mm' ? '20cm' : '15cm'}`, qty: calc.paperConsumptionMeters },
-        // Tinta (Média aproximada)
-        { name: 'Tinta Sublimática', qty: calc.inkConsumptionLitres }
+        { item: inventory.find(i => i.category === 'papel' && i.name.includes(item.width === '25mm' ? '20cm' : '15cm')), qty: calc.paperConsumptionMeters },
+        // Tinta
+        { item: inventory.find(i => i.category === 'tinta' || i.name.toLowerCase().includes('tinta')), qty: calc.inkConsumptionLitres }
       ];
 
       // Acessórios
       item.finishings.forEach(f => {
-        // Tenta encontrar o nome amigável no estoque
-        let stockName = '';
-        if (f.type === 'mosquetao') stockName = 'Mosquetão Padrão Niquel';
-        else if (f.type === 'trava') stockName = 'Trava de Segurança';
-        else if (f.type === 'jacare') stockName = 'Jacaré Niquelado';
-        else stockName = f.type; // Fallback para o nome do tipo
-
-        deductions.push({ name: stockName, qty: f.quantity * item.quantity });
+        const stockItem = inventory.find(i => 
+          i.name.toLowerCase().includes(f.type.toLowerCase()) || 
+          (i.category === 'acessorio' && i.name.toLowerCase().includes(f.type.toLowerCase()))
+        );
+        deductions.push({ item: stockItem, qty: f.quantity * item.quantity });
       });
 
       // Executar as baixas
-      for (const deduction of deductions) {
-        const stockItem = inventory.find(i => i.name.toLowerCase().includes(deduction.name.toLowerCase()));
-        if (stockItem) {
-          const newQty = Math.max(0, stockItem.quantity - deduction.qty);
-          await supabase.from('inventory').update({ quantity: newQty }).eq('id', stockItem.id);
+      for (const d of deductions) {
+        if (d.item) {
+          const newQty = Math.max(0, d.item.quantity - d.qty);
+          await supabase.from('inventory').update({ quantity: newQty }).eq('id', d.item.id);
           
-          // Alerta de estoque baixo
-          if (newQty <= stockItem.minStock) {
-            toast(`Estoque crítico: ${stockItem.name}`, { icon: '⚠️', duration: 5000 });
+          if (newQty <= d.item.minStock) {
+            toast(`Estoque crítico: ${d.item.name}`, { icon: '⚠️', duration: 5000 });
           }
         }
       }
 
-      // Atualizar estado local do inventário após as baixas
+      // Atualizar estado local do inventário
       const { data: updatedInventory } = await supabase.from('inventory').select('*').order('name');
       if (updatedInventory) {
         setInventory(updatedInventory.map((item: any) => ({
