@@ -305,17 +305,19 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddOrder = async (order: Order) => {
+    // Mapeia campos camelCase para snake_case do banco
+    const { id, clientId, clientName, totalValue, opNumber, ...rest } = order as any;
     const { data, error } = await supabase.from('orders').insert([{ 
-      ...order, 
+      ...rest, 
       user_id: user?.id,
-      client_id: order.clientId,
-      client_name: order.clientName,
-      total_value: order.totalValue,
-      op_number: order.opNumber
+      client_id: clientId,
+      client_name: clientName,
+      total_value: totalValue,
+      op_number: opNumber || String(Math.floor(Math.random() * 9000) + 1000)
     }]).select();
     
     if (error) {
-      toast.error('Erro ao criar pedido');
+      toast.error('Erro ao criar pedido: ' + error.message);
       return;
     }
     
@@ -326,16 +328,17 @@ const MainApp: React.FC = () => {
   };
 
   const handleUpdateOrder = async (order: Order) => {
+    const { id, clientId, clientName, totalValue, opNumber, ...rest } = order as any;
     const { error } = await supabase.from('orders').update({
-      ...order,
-      client_id: order.clientId,
-      client_name: order.clientName,
-      total_value: order.totalValue,
-      op_number: order.opNumber
-    }).eq('id', order.id);
+      ...rest,
+      client_id: clientId,
+      client_name: clientName,
+      total_value: totalValue,
+      op_number: opNumber
+    }).eq('id', id);
     
     if (error) {
-      toast.error('Erro ao atualizar pedido');
+      toast.error('Erro ao atualizar pedido: ' + error.message);
       return;
     }
     

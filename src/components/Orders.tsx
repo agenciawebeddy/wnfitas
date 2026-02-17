@@ -169,12 +169,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
     const client = clients.find(c => c.id === selectedClient);
 
-    const orderData: Order = {
-      id: editingId || `OP-${Date.now()}`,
-      opNumber: editingId ? orders.find(o => o.id === editingId)?.opNumber : String(Math.floor(Math.random() * 9000) + 1000),
+    const orderData: any = {
       clientId: selectedClient,
       clientName: client?.name || 'Cliente',
-      date: editingId ? orders.find(o => o.id === editingId)?.date || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       deadline: deadline || new Date().toISOString().split('T')[0],
       status: finalStatus,
       totalValue: unitPrice * quantity,
@@ -182,8 +179,13 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       items: [{ width, quantity, unitPrice, colorBase: 'Branco', finishings: activeFinishings }]
     };
 
-    if (editingId) onUpdateOrder(orderData);
-    else onAddOrder(orderData);
+    if (editingId) {
+      orderData.id = editingId;
+      onUpdateOrder(orderData as Order);
+    } else {
+      onAddOrder(orderData as Order);
+    }
+    
     setViewMode('list');
     resetForm();
   };
@@ -204,7 +206,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     return (
       <div className="space-y-6 animate-in slide-in-from-right duration-300 pb-10">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-100">Novo Pedido / Orçamento</h2>
+          <h2 className="text-2xl font-bold text-slate-100">{editingId ? 'Editar Pedido' : 'Novo Pedido / Orçamento'}</h2>
           <button 
             onClick={() => {
               resetForm();
