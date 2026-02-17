@@ -35,19 +35,19 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
       return;
     }
 
-    const clientData: Client = {
-      id: editingId || `CLI-${Date.now()}`,
+    // Criamos um objeto parcial para o cadastro, o ID será gerado pelo banco
+    const clientData: any = {
       name,
       cnpj,
       phone,
       email,
-      totalOrders: editingId ? (clients.find(c => c.id === editingId)?.totalOrders || 0) : 0
     };
 
     if (editingId) {
-      onUpdateClient(clientData);
+      clientData.id = editingId;
+      onUpdateClient(clientData as Client);
     } else {
-      onAddClient(clientData);
+      onAddClient(clientData as Client);
     }
 
     resetForm();

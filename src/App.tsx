@@ -201,8 +201,8 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddClient = async (client: Client) => {
-    // Remove totalOrders as it's not in the DB table
-    const { totalOrders, ...dbClient } = client;
+    // Remove totalOrders e id (se for nulo/inválido) para deixar o Supabase gerar o UUID
+    const { totalOrders, id, ...dbClient } = client;
     const { data, error } = await supabase.from('clients').insert([{ ...dbClient, user_id: user?.id }]).select();
     
     if (error) {
