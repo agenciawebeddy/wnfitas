@@ -133,7 +133,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     }
 
     // 2. Check Paper
-    const paperWidth = width === '25mm' ? '20cm' : '15cm';
+    const paperWidth = width === '25mm' ? '22cm' : '15cm';
     const paperItem = inventory.find(i => i.category === 'papel' && i.name.includes(paperWidth));
     if (!paperItem) {
       missing.push(`Papel Bobina ${paperWidth} não encontrado`);
@@ -474,7 +474,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-800/50 text-[10px]">
                     <span className="text-slate-600">5 artes por fileira</span><br/>
-                    <span className="text-blue-400 font-bold">Bobina {width === '25mm' ? '220mm' : '150mm'}</span>
+                    <span className="text-blue-400 font-bold">Bobina {width === '25mm' ? '22cm' : '15cm'}</span>
                   </div>
                 </div>
               </div>

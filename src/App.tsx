@@ -353,7 +353,7 @@ const MainApp: React.FC = () => {
         // Fita
         { item: findStockItem(`Fita Poliéster ${item.width}`, 'fita'), qty: calc.totalLinearMeters },
         // Papel
-        { item: inventory.find(i => i.category === 'papel' && i.name.includes(item.width === '25mm' ? '20cm' : '15cm')), qty: calc.paperConsumptionMeters }
+        { item: inventory.find(i => i.category === 'papel' && i.name.includes(item.width === '25mm' ? '22cm' : '15cm')), qty: calc.paperConsumptionMeters }
       ];
 
       // Acessórios

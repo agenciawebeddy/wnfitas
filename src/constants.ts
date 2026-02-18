@@ -8,7 +8,7 @@ export const MOCK_CLIENTS: Client[] = [
 
 export const MOCK_INVENTORY: InventoryItem[] = [
   { id: '1', name: 'Papel Sublimático Bobina 15cm', category: 'papel', quantity: 0, unit: 'm', minStock: 100 },
-  { id: '9', name: 'Papel Sublimático Bobina 20cm', category: 'papel', quantity: 0, unit: 'm', minStock: 100 },
+  { id: '9', name: 'Papel Sublimático Bobina 22cm', category: 'papel', quantity: 0, unit: 'm', minStock: 100 },
   { id: '4', name: 'Fita Poliéster 20mm Branca', category: 'fita', quantity: 0, unit: 'm', minStock: 1000 },
   { id: '6', name: 'Fita Poliéster 25mm Branca', category: 'fita', quantity: 0, unit: 'm', minStock: 500 },
   { id: '5', name: 'Mosquetão Padrão Niquel', category: 'acessorio', quantity: 0, unit: 'un', minStock: 1000 },
