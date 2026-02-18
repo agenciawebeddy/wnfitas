@@ -381,32 +381,42 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                         <th className="px-2 py-3">Tipo</th>
                         <th className="px-4 py-3 text-right">Preço Un.</th>
                         <th className="px-4 py-3 text-center w-24">Qtd/Cordão</th>
+                        <th className="px-4 py-3 text-right w-24">Total Nec.</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
-                      {pricingConfig.finishings.map(item => (
-                        <tr key={item.name} className={`hover:bg-slate-900/30 transition-colors ${finishings[item.name]?.selected ? 'bg-blue-900/5' : ''}`}>
-                          <td className="px-4 py-3">
-                            <input 
-                              type="checkbox" 
-                              checked={finishings[item.name]?.selected}
-                              onChange={() => toggleFinishing(item.name)}
-                              className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="px-2 py-3 font-medium text-slate-300">{item.name.charAt(0).toUpperCase() + item.name.slice(1)}</td>
-                          <td className="px-4 py-3 text-right text-slate-500">R$ {formatCurrency(item.price)}</td>
-                          <td className="px-4 py-3">
-                            <input 
-                              type="number" 
-                              disabled={!finishings[item.name]?.selected}
-                              value={finishings[item.name]?.quantity || 1}
-                              onChange={e => updateFinishingQuantity(item.name, Number(e.target.value))}
-                              className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center text-slate-200 disabled:opacity-30"
-                            />
-                          </td>
-                        </tr>
-                      ))}
+                      {pricingConfig.finishings.map(item => {
+                        const state = finishings[item.name];
+                        const totalNeeded = (state?.quantity || 0) * quantity;
+                        return (
+                          <tr key={item.name} className={`hover:bg-slate-900/30 transition-colors ${state?.selected ? 'bg-blue-900/5' : ''}`}>
+                            <td className="px-4 py-3">
+                              <input 
+                                type="checkbox" 
+                                checked={state?.selected}
+                                onChange={() => toggleFinishing(item.name)}
+                                className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500"
+                              />
+                            </td>
+                            <td className="px-2 py-3 font-medium text-slate-300">{item.name.charAt(0).toUpperCase() + item.name.slice(1)}</td>
+                            <td className="px-4 py-3 text-right text-slate-500">R$ {formatCurrency(item.price)}</td>
+                            <td className="px-4 py-3">
+                              <input 
+                                type="number" 
+                                disabled={!state?.selected}
+                                value={state?.quantity || 1}
+                                onChange={e => updateFinishingQuantity(item.name, Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center text-slate-200 disabled:opacity-30"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className={`font-bold ${state?.selected ? 'text-blue-400' : 'text-slate-700'}`}>
+                                {state?.selected ? totalNeeded : '-'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
