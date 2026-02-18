@@ -65,7 +65,7 @@ export interface Client {
 
 export interface OrderFinishing {
   type: FinishingType;
-  quantity: number; // Quantidade deste acabamento POR lanyard
+  quantity: number; // Quantidade TOTAL deste acabamento no pedido
 }
 
 export interface OrderItem {
