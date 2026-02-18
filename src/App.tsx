@@ -31,7 +31,7 @@ const Inventory: React.FC<{
   };
 
   const handleSubmit = (id: string) => {
-    const qty = parseFloat(stockInputs[id]);
+    const qty = parseFloat(stockInputs[id].replace(',', '.'));
     if (!isNaN(qty) && qty !== 0) {
       onUpdateStock(id, qty);
       setStockInputs(prev => ({ ...prev, [id]: '' }));
@@ -50,6 +50,13 @@ const Inventory: React.FC<{
     onAddItem(newItem);
     setIsAdding(false);
     setNewName('');
+  };
+
+  const formatQty = (item: InventoryItem) => {
+    if (item.category === 'fita' || item.category === 'papel') {
+      return item.quantity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return item.quantity.toString();
   };
 
   if (isAdding) {
@@ -109,10 +116,10 @@ const Inventory: React.FC<{
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-2xl font-bold text-emerald-400">{item.quantity} <span className="text-sm font-normal text-slate-500">{item.unit}</span></p>
+                <p className="text-2xl font-bold text-emerald-400">{formatQty(item)} <span className="text-sm font-normal text-slate-500">{item.unit}</span></p>
               </div>
               <div className="flex items-center gap-2">
-                <input type="number" className="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm" value={stockInputs[item.id] || ''} onChange={e => handleInputChange(item.id, e.target.value)} />
+                <input type="text" className="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm" value={stockInputs[item.id] || ''} onChange={e => handleInputChange(item.id, e.target.value)} placeholder="0,00" />
                 <button onClick={() => handleSubmit(item.id)} className="bg-blue-600 p-1.5 rounded"><Plus className="w-4 h-4" /></button>
               </div>
               <button onClick={() => onDeleteItem(item.id)} className="text-slate-600 hover:text-red-400"><Trash2 className="w-5 h-5" /></button>
@@ -362,7 +369,7 @@ const MainApp: React.FC = () => {
           i.name.toLowerCase().includes(f.type.toLowerCase()) || 
           (i.category === 'acessorio' && i.name.toLowerCase().includes(f.type.toLowerCase()))
         );
-        deductions.push({ item: stockItem, qty: f.quantity * item.quantity });
+        deductions.push({ item: stockItem, qty: f.quantity });
       });
 
       // Executar as baixas

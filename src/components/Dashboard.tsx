@@ -43,6 +43,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, inventory }) => {
     .filter(o => o.status !== 'cancelado')
     .reduce((acc, o) => acc + o.totalValue, 0);
   
+  const formatQty = (item: InventoryItem) => {
+    if (item.category === 'fita' || item.category === 'papel') {
+      return item.quantity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return item.quantity.toString();
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
@@ -120,7 +127,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, inventory }) => {
                     </div>
                     <div className="text-right">
                       <p className={`text-lg font-bold ${item.quantity === 0 ? 'text-red-500' : 'text-orange-500'}`}>
-                        {item.quantity} {item.unit}
+                        {formatQty(item)} {item.unit}
                       </p>
                       <span className="text-[10px] font-bold uppercase text-red-400">
                         {item.quantity === 0 ? 'Zerado' : 'Baixo'}

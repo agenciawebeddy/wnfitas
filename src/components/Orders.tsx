@@ -127,12 +127,14 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       );
     };
 
+    const formatStock = (qty: number) => qty.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     // 1. Check Tape
     const tapeItem = findItem(`Fita Poliéster ${width}`, 'fita');
     if (!tapeItem) {
       missing.push(`Fita ${width} não encontrada no estoque`);
     } else if (tapeItem.quantity < calc.totalLinearMeters) {
-      missing.push(`Fita ${width} insuficiente (${tapeItem.quantity}m / Nec: ${calc.totalLinearMeters}m)`);
+      missing.push(`Fita ${width} insuficiente (${formatStock(tapeItem.quantity)}m / Nec: ${formatStock(calc.totalLinearMeters)}m)`);
     }
 
     // 2. Check Paper
@@ -141,7 +143,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     if (!paperItem) {
       missing.push(`Papel Bobina ${paperWidth} não encontrado`);
     } else if (paperItem.quantity < calc.paperConsumptionMeters) {
-      missing.push(`Papel ${paperWidth} insuficiente (${paperItem.quantity}m / Nec: ${calc.paperConsumptionMeters}m)`);
+      missing.push(`Papel ${paperWidth} insuficiente (${formatStock(paperItem.quantity)}m / Nec: ${formatStock(calc.paperConsumptionMeters)}m)`);
     }
 
     // 4. Check Finishings
