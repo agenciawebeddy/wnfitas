@@ -45,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, inventory }) => {
   
   const formatQty = (item: InventoryItem) => {
     if (item.category === 'fita' || item.category === 'papel') {
-      return item.quantity.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return item.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
     }
     return item.quantity.toString();
   };

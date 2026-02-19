@@ -127,7 +127,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       );
     };
 
-    const formatStock = (qty: number) => qty.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatStock = (qty: number) => qty.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 
     // 1. Check Tape
     const tapeItem = findItem(`Fita Poliéster ${width}`, 'fita');
