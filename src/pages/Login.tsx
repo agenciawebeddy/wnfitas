@@ -9,9 +9,8 @@ export const Login = () => {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl">
-        <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-2xl">W</div>
-          <span className="font-bold text-2xl tracking-tight text-white">WN<span className="text-blue-500">Fitas</span></span>
+        <div className="flex items-center justify-center mb-8">
+          <img src="/logo.webp" alt="WNFitas Logo" className="h-16 w-auto object-contain" />
         </div>
         
         <h2 className="text-xl font-semibold text-slate-100 mb-6 text-center">Acesse o Sistema Industrial</h2>

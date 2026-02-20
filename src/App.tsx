@@ -464,11 +464,8 @@ const MainApp: React.FC = () => {
       {isSidebarOpen && <div className="fixed inset-0 bg-black/60 z-20 lg:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-200 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="h-full flex flex-col">
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-xl">W</div>
-              <span className="font-bold text-lg tracking-tight">WN<span className="text-blue-500">Fitas</span></span>
-            </div>
+          <div className="p-6 border-b border-slate-800 flex items-center justify-center">
+            <img src="/logo.webp" alt="WNFitas Logo" className="h-12 w-auto object-contain" />
           </div>
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             <NavItem icon={LayoutDashboard} label="Dashboard" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} />
