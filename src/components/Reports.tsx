@@ -16,10 +16,20 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  const getProductLabel = (type: string) => {
+    switch (type) {
+      case 'tirante': return 'Tirante';
+      case 'tirante_copo': return 'Tirante Copo';
+      case 'chaveiro': return 'Chaveiro';
+      case 'pulseira': return 'Pulseira';
+      default: return type;
+    }
+  };
+
   // Dados para Gráfico de Pedidos por Status
   const statusData = [
     { name: 'Orçamentos', value: orders.filter(o => o.status === 'orcamento').length },
-    { name: 'Em Produção', value: orders.filter(o => ['impressao', 'calandra', 'finalizacao'].length > 0).length },
+    { name: 'Em Produção', value: orders.filter(o => ['impressao', 'calandra', 'finalizacao'].includes(o.status)).length },
     { name: 'Finalizados', value: orders.filter(o => o.status === 'concluido' || o.status === 'entregue').length },
   ];
 
@@ -167,33 +177,48 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
 
       {activeTab === 'pedidos' && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
-              <tr>
-                <th className="px-6 py-4">OP / Data</th>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Valor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {orders.map(o => (
-                <tr key={o.id} className="hover:bg-slate-800/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-mono text-blue-400">#{o.opNumber}</p>
-                    <p className="text-xs text-slate-500">{new Date(o.date).toLocaleDateString('pt-BR')}</p>
-                  </td>
-                  <td className="px-6 py-4 text-slate-200 font-medium">{o.clientName}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-slate-100">{formatCurrency(o.totalValue)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[800px]">
+              <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
+                <tr>
+                  <th className="px-6 py-4">OP / Data</th>
+                  <th className="px-6 py-4">Cliente</th>
+                  <th className="px-6 py-4">Produto</th>
+                  <th className="px-6 py-4 text-center">Qtd</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Valor Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {orders.map(o => (
+                  <tr key={o.id} className="hover:bg-slate-800/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-mono text-blue-400">#{o.opNumber}</p>
+                      <p className="text-xs text-slate-500">{new Date(o.date).toLocaleDateString('pt-BR')}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-slate-200 font-medium truncate max-w-[200px]">{o.clientName}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-slate-300 text-sm">{getProductLabel(o.items[0].productType)}</p>
+                      <p className="text-[10px] text-slate-500">{o.items[0].width}</p>
+                    </td>
+                    <td className="px-6 py-4 text-center text-slate-300 font-bold">
+                      {o.items[0].quantity}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                        {o.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right font-bold text-emerald-400">
+                      {formatCurrency(o.totalValue)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
