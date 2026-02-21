@@ -178,13 +178,13 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
       {activeTab === 'pedidos' && (
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[800px]">
+            <table className="w-full text-left min-w-[1000px]">
               <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
                 <tr>
                   <th className="px-6 py-4">OP / Data</th>
                   <th className="px-6 py-4">Cliente</th>
-                  <th className="px-6 py-4">Produto</th>
-                  <th className="px-6 py-4 text-center">Qtd</th>
+                  <th className="px-6 py-4">Produto / Qtd</th>
+                  <th className="px-6 py-4">Insumos Utilizados</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4 text-right">Valor Total</th>
                 </tr>
@@ -197,14 +197,30 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
                       <p className="text-xs text-slate-500">{new Date(o.date).toLocaleDateString('pt-BR')}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-slate-200 font-medium truncate max-w-[200px]">{o.clientName}</p>
+                      <p className="text-slate-200 font-medium truncate max-w-[150px]">{o.clientName}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-slate-300 text-sm">{getProductLabel(o.items[0].productType)}</p>
-                      <p className="text-[10px] text-slate-500">{o.items[0].width}</p>
+                      <p className="text-[10px] text-slate-500">{o.items[0].quantity} un • {o.items[0].width}</p>
                     </td>
-                    <td className="px-6 py-4 text-center text-slate-300 font-bold">
-                      {o.items[0].quantity}
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                          <Ruler className="w-3 h-3 text-blue-500" />
+                          <span>Fita: {o.calculation.totalLinearMeters}m</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                          <FileText className="w-3 h-3 text-amber-500" />
+                          <span>Papel: {o.calculation.paperConsumptionMeters}m</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {o.items[0].finishings.map((f, idx) => (
+                            <span key={idx} className="bg-slate-800 text-[9px] px-1.5 py-0.5 rounded text-slate-300 border border-slate-700">
+                              {f.quantity}x {f.type}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[10px] font-bold uppercase px-2 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
