@@ -148,7 +148,7 @@ const MainApp: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>({
-    '15mm': 1.20, '20mm': 2.30, '25mm': 2.80,
+    '15mm': 1.10, '20mm': 2.10, '25mm': 2.80,
     finishings: [
       { name: 'argola', price: 0.03 }, { name: 'jacare', price: 0.31 },
       { name: 'fecho', price: 0.29 }, { name: 'trava', price: 0.11 },

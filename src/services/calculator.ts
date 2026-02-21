@@ -17,7 +17,8 @@ export const calculateProduction = (
   let paperWidthMm = 150;
   const itemsPerRow = 5; 
 
-  if (width === '25mm') {
+  // Chaveiros e Pulseiras sempre usam bobina de 15cm (150mm)
+  if (productType === 'tirante' && width === '25mm') {
     paperWidthMm = 220;
   } else {
     paperWidthMm = 150; 

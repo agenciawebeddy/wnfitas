@@ -42,6 +42,12 @@ const getStatusConfig = (status: OrderStatus) => {
   }
 };
 
+const PRODUCT_LENGTHS: Record<ProductType, number> = {
+  tirante: 0.90,
+  chaveiro: 0.29,
+  pulseira: 0.35
+};
+
 export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,9 +95,11 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   }, [productType, width, quantity, pricingConfig]);
 
   useEffect(() => {
-    const basePrice = pricingConfig[width];
-    let totalFinishingsCost = 0;
+    // O preço base na configuração é para 90cm (0.90m)
+    const lengthMeters = PRODUCT_LENGTHS[productType];
+    const basePriceForLength = (pricingConfig[width] / 0.90) * lengthMeters;
     
+    let totalFinishingsCost = 0;
     pricingConfig.finishings.forEach(item => {
       const state = finishings[item.name];
       if (state && state.selected) {
@@ -103,7 +111,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     const factor = rule ? rule.factor : 1;
     setAppliedFactor(factor);
 
-    const tapeCostAdjusted = basePrice * factor;
+    const tapeCostAdjusted = basePriceForLength * factor;
     const avgFinishingCost = quantity > 0 ? totalFinishingsCost / quantity : 0;
     
     const rawPrice = tapeCostAdjusted + avgFinishingCost;
@@ -112,7 +120,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
     setPriceBreakdown({ tape: tapeCostAdjusted, finishings: avgFinishingCost });
     setUnitPrice(parseFloat(finalPrice.toFixed(3)));
-  }, [width, finishings, pricingConfig, quantity]);
+  }, [width, finishings, pricingConfig, quantity, productType]);
 
   // Stock Validation Logic
   const [stockValidation, setStockValidation] = useState<{ isValid: boolean; missingItems: string[] }>({ isValid: true, missingItems: [] });
@@ -139,7 +147,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     }
 
     // 2. Check Paper
-    const paperWidth = width === '25mm' ? '22cm' : '15cm';
+    const paperWidth = (productType === 'tirante' && width === '25mm') ? '22cm' : '15cm';
     const paperItem = inventory.find(i => i.category === 'papel' && i.name.includes(paperWidth));
     if (!paperItem) {
       missing.push(`Papel Bobina ${paperWidth} não encontrado`);
@@ -168,7 +176,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       isValid: missing.length === 0,
       missingItems: missing
     });
-  }, [width, quantity, calc, finishings, inventory, pricingConfig]);
+  }, [width, quantity, calc, finishings, inventory, pricingConfig, productType]);
 
   const toggleFinishing = (type: FinishingType) => {
     setFinishings(prev => {
@@ -509,7 +517,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-800/50 text-[10px]">
                     <span className="text-slate-600">5 artes por fileira</span><br/>
-                    <span className="text-blue-400 font-bold">Bobina {width === '25mm' ? '22cm' : '15cm'}</span>
+                    <span className="text-blue-400 font-bold">Bobina {(productType === 'tirante' && width === '25mm') ? '22cm' : '15cm'}</span>
                   </div>
                 </div>
               </div>
