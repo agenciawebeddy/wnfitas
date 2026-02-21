@@ -109,20 +109,36 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
                 <Ruler className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Fita Necessária</p>
+                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Fita Necessária (Total)</p>
                 <p className="text-3xl font-bold text-slate-100">{results.totalLinearMeters}m</p>
-                <p className="text-[10px] text-slate-500 mt-1">Metros lineares totais</p>
+                <p className="text-[10px] text-slate-500 mt-1">Qtd x Comprimento do Produto</p>
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex items-start gap-4">
-              <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
-                <Package className="w-6 h-6" />
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
+                  <Package className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase mb-1">Papel (Metros Lineares)</p>
+                  <p className="text-3xl font-bold text-slate-100">{formatNumber(results.paperConsumptionMeters)}m</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Consumo de Papel</p>
-                <p className="text-3xl font-bold text-slate-100">{formatNumber(results.paperConsumptionMeters)}m</p>
-                <p className="text-[10px] text-slate-500 mt-1">Bobina de {((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') ? '22cm' : '15cm'}</p>
+              
+              <div className="space-y-2 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Frente (Fita / Fileiras)</span>
+                  <span className="text-emerald-400 font-bold">{results.paperMetersPerSide}m</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Verso (Fita / Fileiras)</span>
+                  <span className="text-emerald-400 font-bold">{results.paperMetersPerSide}m</span>
+                </div>
+                <div className="pt-1 border-t border-slate-800 flex justify-between text-[10px]">
+                  <span className="text-slate-600">Total com 5% de sobra</span>
+                  <span className="text-slate-400">{formatNumber(results.paperConsumptionMeters)}m</span>
+                </div>
               </div>
             </div>
           </div>
@@ -164,7 +180,7 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
               </div>
               <div className="flex items-center gap-3 text-slate-500 text-xs mt-2">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span>Inclui margem de segurança de 5% no consumo de papel.</span>
+                <span>Bobina de {((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') ? '22cm' : '15cm'}.</span>
               </div>
             </div>
           </div>
