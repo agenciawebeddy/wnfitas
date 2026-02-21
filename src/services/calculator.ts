@@ -1,41 +1,44 @@
-import { LanyardWidth, ProductionCalculation, PricingConfig } from '../types';
+import { LanyardWidth, ProductionCalculation, PricingConfig, ProductType } from '../types';
 
-const LANYARD_LENGTH_METERS = 0.90; // 900mm
+const PRODUCT_LENGTHS: Record<ProductType, number> = {
+  tirante: 0.90,
+  chaveiro: 0.29,
+  pulseira: 0.35
+};
 
 export const calculateProduction = (
+  productType: ProductType,
   width: LanyardWidth,
   quantity: number,
-  config?: PricingConfig // Config agora é opcional mas idealmente passado para cálculos de tempo
+  config?: PricingConfig
 ): ProductionCalculation => {
-  // Configuração das Bobinas:
-  // Fitas 15mm e 20mm -> Bobina 150mm (5 artes por fileira)
-  // Fita 25mm -> Bobina 220mm (5 artes por fileira)
+  const lengthMeters = PRODUCT_LENGTHS[productType];
   
   let paperWidthMm = 150;
-  const itemsPerRow = 5; // Fixo conforme regra de negócio (5 artes por coluna da bobina)
+  const itemsPerRow = 5; 
 
   if (width === '25mm') {
     paperWidthMm = 220;
   } else {
-    paperWidthMm = 150; // 15mm e 20mm
+    paperWidthMm = 150; 
   }
   
-  // 1. Total de metros lineares de FITA (Material cru)
-  const totalTapeMeters = quantity * LANYARD_LENGTH_METERS;
+  // 1. Total de metros lineares de FITA
+  const totalTapeMeters = quantity * lengthMeters;
   
-  // 2. Cálculo de Papel por Lado (Frente ou Verso)
+  // 2. Cálculo de Papel por Lado
   const paperMetersPerSide = totalTapeMeters / itemsPerRow;
   
   // 3. Total de metros de IMPRESSÃO (Frente + Verso)
   const totalPrintMeters = totalTapeMeters * 2;
 
-  // 4. Cálculo de consumo de Papel TOTAL para custos (com margem)
+  // 4. Cálculo de consumo de Papel TOTAL
   const rawPaperConsumption = totalPrintMeters / itemsPerRow;
-  const paperConsumptionMeters = rawPaperConsumption * 1.05; // +5% margem
+  const paperConsumptionMeters = rawPaperConsumption * 1.05; 
 
-  // Estimativa de Custo (Valores base sem tinta)
+  // Estimativa de Custo
   const paperCost = paperConsumptionMeters * (paperWidthMm === 220 ? 1.50 : 1.10); 
-  const tapeCost = totalTapeMeters * 0.40; // R$ 0.40 por metro de fita crua
+  const tapeCost = totalTapeMeters * 0.40; 
   
   const estimatedCost = paperCost + tapeCost;
 

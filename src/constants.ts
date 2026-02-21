@@ -28,6 +28,7 @@ export const MOCK_ORDERS: Order[] = [
     opNumber: '1023',
     items: [
       { 
+        productType: 'tirante',
         width: '20mm', 
         quantity: 500, 
         unitPrice: 3.00, 
@@ -56,6 +57,7 @@ export const MOCK_ORDERS: Order[] = [
     opNumber: '1024',
     items: [
       { 
+        productType: 'tirante',
         width: '25mm', 
         quantity: 1000, 
         unitPrice: 3.20, 
@@ -83,6 +85,7 @@ export const MOCK_ORDERS: Order[] = [
     totalValue: 5000.00,
     items: [
       { 
+        productType: 'tirante',
         width: '20mm', 
         quantity: 2000, 
         unitPrice: 2.50, 

@@ -9,6 +9,7 @@ export type OrderStatus =
   | 'cancelado';
 
 export type LanyardWidth = '15mm' | '20mm' | '25mm';
+export type ProductType = 'tirante' | 'chaveiro' | 'pulseira';
 
 // FinishingType agora é apenas string pois é dinâmico
 export type FinishingType = string;
@@ -69,6 +70,7 @@ export interface OrderFinishing {
 }
 
 export interface OrderItem {
+  productType: ProductType;
   width: LanyardWidth;
   quantity: number;
   unitPrice: number;

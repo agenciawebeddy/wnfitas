@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
-import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem } from '../types';
+import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
 
 interface OrdersProps {
   onNavigate: (view: string) => void;
@@ -50,6 +50,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
   // Form State
   const [selectedClient, setSelectedClient] = useState('');
+  const [productType, setProductType] = useState<ProductType>('tirante');
   const [width, setWidth] = useState<LanyardWidth>('20mm');
   const [quantity, setQuantity] = useState(100);
   const [deadline, setDeadline] = useState('');
@@ -81,11 +82,11 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     });
   }, [pricingConfig.finishings, quantity]);
 
-  const [calc, setCalc] = useState(calculateProduction('20mm', 100, pricingConfig));
+  const [calc, setCalc] = useState(calculateProduction('tirante', '20mm', 100, pricingConfig));
 
   useEffect(() => {
-    setCalc(calculateProduction(width, quantity, pricingConfig));
-  }, [width, quantity, pricingConfig]);
+    setCalc(calculateProduction(productType, width, quantity, pricingConfig));
+  }, [productType, width, quantity, pricingConfig]);
 
   useEffect(() => {
     const basePrice = pricingConfig[width];
@@ -193,6 +194,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const resetForm = () => {
     setEditingId(null);
     setSelectedClient('');
+    setProductType('tirante');
     setWidth('20mm');
     setQuantity(100);
     setDeadline('');
@@ -206,6 +208,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setDeadline(order.deadline);
     setCurrentStatus(order.status);
     const item = order.items[0];
+    setProductType(item.productType || 'tirante');
     setWidth(item.width);
     setQuantity(item.quantity);
     const newFinishingsState = createInitialFinishingsState(item.quantity);
@@ -249,7 +252,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       status: finalStatus,
       totalValue: unitPrice * quantity,
       calculation: calc,
-      items: [{ width, quantity, unitPrice, colorBase: 'Branco', finishings: activeFinishings }]
+      items: [{ productType, width, quantity, unitPrice, colorBase: 'Branco', finishings: activeFinishings }]
     };
 
     if (editingId) {
@@ -317,6 +320,30 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Tipo de Produto</label>
+                    <select 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={productType}
+                      onChange={e => setProductType(e.target.value as ProductType)}
+                    >
+                      <option value="tirante">Tirantes (Crachá/Medalha)</option>
+                      <option value="chaveiro">Chaveiros</option>
+                      <option value="pulseira">Pulseiras</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Prazo Entrega</label>
+                    <input 
+                      type="date" 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={deadline}
+                      onChange={e => setDeadline(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Status do Pedido</label>
                     <select 
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -331,34 +358,24 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Prazo Entrega</label>
-                    <input 
-                      type="date" 
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={deadline}
-                      onChange={e => setDeadline(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 uppercase mb-2">Largura Fita</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['15mm', '20mm', '25mm'] as LanyardWidth[]).map(w => (
-                      <button
-                        key={w}
-                        onClick={() => setWidth(w)}
-                        className={`py-2.5 rounded-lg text-sm font-bold transition-all border ${width === w ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'}`}
-                      >
-                        {w}
-                      </button>
-                    ))}
+                    <label className="block text-xs font-medium text-slate-500 uppercase mb-2">Largura Fita</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['15mm', '20mm', '25mm'] as LanyardWidth[]).map(w => (
+                        <button
+                          key={w}
+                          onClick={() => setWidth(w)}
+                          className={`py-2.5 rounded-lg text-sm font-bold transition-all border ${width === w ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'}`}
+                        >
+                          {w}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Quantidade Total (Lanyards)</label>
+                    <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Quantidade Total (Unidades)</label>
                     <input 
                       type="number" 
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
@@ -599,7 +616,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${status.color}`}>{status.label}</span>
                   </div>
                   <p className="font-bold text-slate-100 text-lg">{order.clientName}</p>
-                  <p className="text-xs text-slate-500">{order.items[0].quantity} un • {order.items[0].width} • {order.items[0].finishings.length} acabamentos</p>
+                  <p className="text-xs text-slate-500">
+                    {order.items[0].productType === 'tirante' ? 'Tirante' : order.items[0].productType === 'chaveiro' ? 'Chaveiro' : 'Pulseira'} • {order.items[0].quantity} un • {order.items[0].width}
+                  </p>
                 </div>
               </div>
               
