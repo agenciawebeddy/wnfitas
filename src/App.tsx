@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2, Calculator as CalcIcon } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2, Calculator as CalcIcon, BarChart3 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { Dashboard } from './components/Dashboard';
 import { Orders } from './components/Orders';
 import { Production } from './components/Production';
 import { Settings } from './components/Settings';
 import { Clients } from './components/Clients';
+import { Reports } from './components/Reports';
 import Calculator from './components/Calculator';
 import ConfirmModal from './components/ConfirmModal';
 import { PricingConfig, Order, Client, InventoryItem } from './types';
@@ -429,6 +430,7 @@ const MainApp: React.FC = () => {
       case 'production': return <Production orders={orders} />;
       case 'inventory': return <Inventory items={inventory} onUpdateStock={handleUpdateStock} onAddItem={handleAddItem} onDeleteItem={handleDeleteItem} />;
       case 'clients': return <Clients clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />;
+      case 'reports': return <Reports orders={orders} clients={clients} inventory={inventory} />;
       case 'settings': return <Settings pricing={pricingConfig} onSave={handleSavePricing} />;
       case 'calculator': return <Calculator pricingConfig={pricingConfig} />;
       default: return <Dashboard orders={orders} inventory={inventory} />;
@@ -463,6 +465,7 @@ const MainApp: React.FC = () => {
             <NavItem icon={Printer} label="Produção" active={currentView === 'production'} onClick={() => setCurrentView('production')} />
             <NavItem icon={Package} label="Estoque" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
             <NavItem icon={Users} label="Clientes" active={currentView === 'clients'} onClick={() => setCurrentView('clients')} />
+            <NavItem icon={BarChart3} label="Relatórios" active={currentView === 'reports'} onClick={() => setCurrentView('reports')} />
             <NavItem icon={CalcIcon} label="Calculadora" active={currentView === 'calculator'} onClick={() => setCurrentView('calculator')} />
             <NavItem icon={SettingsIcon} label="Configurações" active={currentView === 'settings'} onClick={() => setCurrentView('settings')} />
           </nav>
