@@ -11,12 +11,13 @@ export const calculateProduction = (
   productType: ProductType,
   width: LanyardWidth,
   quantity: number,
-  config?: PricingConfig
+  config?: PricingConfig,
+  itemsPerRow: number = 5 // Adicionado parâmetro com valor padrão
 ): ProductionCalculation => {
   const lengthMeters = PRODUCT_LENGTHS[productType];
   
   let paperWidthMm = 150;
-  const itemsPerRow = 5; 
+  const effectiveItemsPerRow = itemsPerRow > 0 ? itemsPerRow : 5;
 
   // Chaveiros e Pulseiras sempre usam bobina de 15cm (150mm)
   // Tirantes de 25mm usam bobina de 22cm
@@ -30,13 +31,13 @@ export const calculateProduction = (
   const totalTapeMeters = quantity * lengthMeters;
   
   // 2. Cálculo de Papel por Lado
-  const paperMetersPerSide = totalTapeMeters / itemsPerRow;
+  const paperMetersPerSide = totalTapeMeters / effectiveItemsPerRow;
   
   // 3. Total de metros de IMPRESSÃO (Frente + Verso)
   const totalPrintMeters = totalTapeMeters * 2;
 
   // 4. Cálculo de consumo de Papel TOTAL
-  const rawPaperConsumption = totalPrintMeters / itemsPerRow;
+  const rawPaperConsumption = totalPrintMeters / effectiveItemsPerRow;
   const paperConsumptionMeters = rawPaperConsumption * 1.05; 
 
   // Estimativa de Custo
@@ -72,7 +73,7 @@ export const calculateProduction = (
 
   return {
     totalLinearMeters: Math.ceil(totalTapeMeters),
-    paperRows: itemsPerRow,
+    paperRows: effectiveItemsPerRow,
     paperMetersPerSide: parseFloat(paperMetersPerSide.toFixed(2)),
     paperConsumptionMeters: parseFloat(paperConsumptionMeters.toFixed(2)),
     estimatedCost: parseFloat(estimatedCost.toFixed(2)),

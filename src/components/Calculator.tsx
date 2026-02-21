@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Calculator as CalcIcon, Ruler, Printer, Flame, Clock, Package, RefreshCw } from 'lucide-react';
+import { Calculator as CalcIcon, Ruler, Printer, Flame, Clock, Package, RefreshCw, Layers } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, ProductType, PricingConfig } from '../types';
 
@@ -13,12 +13,13 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
   const [productType, setProductType] = useState<ProductType>('tirante');
   const [width, setWidth] = useState<LanyardWidth>('20mm');
   const [quantity, setQuantity] = useState<number>(100);
+  const [itemsPerRow, setItemsPerRow] = useState<number>(5);
   
-  const [results, setResults] = useState(calculateProduction(productType, width, quantity, pricingConfig));
+  const [results, setResults] = useState(calculateProduction(productType, width, quantity, pricingConfig, itemsPerRow));
 
   useEffect(() => {
-    setResults(calculateProduction(productType, width, quantity, pricingConfig));
-  }, [productType, width, quantity, pricingConfig]);
+    setResults(calculateProduction(productType, width, quantity, pricingConfig, itemsPerRow));
+  }, [productType, width, quantity, pricingConfig, itemsPerRow]);
 
   const formatNumber = (val: number) => val.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 
@@ -67,19 +68,33 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Quantidade (Unidades)</label>
-              <input 
-                type="number" 
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
-                value={quantity}
-                onChange={e => setQuantity(Math.max(0, Number(e.target.value)))}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Quantidade</label>
+                <input 
+                  type="number" 
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                  value={quantity}
+                  onChange={e => setQuantity(Math.max(0, Number(e.target.value)))}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Itens / Fileira</label>
+                <div className="relative">
+                  <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
+                  <input 
+                    type="number" 
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                    value={itemsPerRow}
+                    onChange={e => setItemsPerRow(Math.max(1, Number(e.target.value)))}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           <button 
-            onClick={() => { setQuantity(100); setProductType('tirante'); setWidth('20mm'); }}
+            onClick={() => { setQuantity(100); setProductType('tirante'); setWidth('20mm'); setItemsPerRow(5); }}
             className="w-full py-3 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm"
           >
             <RefreshCw className="w-4 h-4" /> Resetar Valores
@@ -145,7 +160,7 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
             <div className="mt-6 p-4 bg-slate-950/50 border border-slate-800 rounded-lg">
               <div className="flex items-center gap-3 text-slate-500 text-xs">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>Cálculo baseado em 5 artes por fileira de papel.</span>
+                <span>Cálculo baseado em {itemsPerRow} artes por fileira de papel.</span>
               </div>
               <div className="flex items-center gap-3 text-slate-500 text-xs mt-2">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
