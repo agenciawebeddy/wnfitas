@@ -84,7 +84,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   }, [productType, width, quantity, pricingConfig]);
 
   useEffect(() => {
-    const basePrice = pricingConfig.prices[productType][width];
+    const basePrice = pricingConfig.prices[productType]?.[width] || 0;
     
     let totalFinishingsCost = 0;
     pricingConfig.finishings.forEach(item => {
@@ -129,7 +129,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       missing.push(`Fita ${width} insuficiente (${formatStock(tapeItem.quantity)}m / Nec: ${formatStock(calc.totalLinearMeters)}m)`);
     }
 
-    const paperWidth = (productType === 'tirante' && width === '25mm') ? '22cm' : '15cm';
+    const paperWidth = ((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') ? '22cm' : '15cm';
     const paperItem = inventory.find(i => i.category === 'papel' && i.name.includes(paperWidth));
     if (!paperItem) {
       missing.push(`Papel Bobina ${paperWidth} não encontrado`);
@@ -314,9 +314,10 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       value={productType}
                       onChange={e => setProductType(e.target.value as ProductType)}
                     >
-                      <option value="tirante">Tirantes (Crachá/Medalha)</option>
-                      <option value="chaveiro">Chaveiros</option>
-                      <option value="pulseira">Pulseiras</option>
+                      <option value="tirante">Tirantes (90cm)</option>
+                      <option value="tirante_copo">Tirante Copo (140cm)</option>
+                      <option value="chaveiro">Chaveiros (29cm)</option>
+                      <option value="pulseira">Pulseiras (35cm)</option>
                     </select>
                   </div>
                   <div>
@@ -493,7 +494,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   </div>
                   <div className="mt-2 pt-2 border-t border-slate-800/50 text-[10px]">
                     <span className="text-slate-600">5 artes por fileira</span><br/>
-                    <span className="text-blue-400 font-bold">Bobina {(productType === 'tirante' && width === '25mm') ? '22cm' : '15cm'}</span>
+                    <span className="text-blue-400 font-bold">Bobina {((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') ? '22cm' : '15cm'}</span>
                   </div>
                 </div>
               </div>
@@ -594,7 +595,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   </div>
                   <p className="font-bold text-slate-100 text-lg">{order.clientName}</p>
                   <p className="text-xs text-slate-500">
-                    {order.items[0].productType === 'tirante' ? 'Tirante' : order.items[0].productType === 'chaveiro' ? 'Chaveiro' : 'Pulseira'} • {order.items[0].quantity} un • {order.items[0].width}
+                    {order.items[0].productType === 'tirante' ? 'Tirante' : order.items[0].productType === 'tirante_copo' ? 'Tirante Copo' : order.items[0].productType === 'chaveiro' ? 'Chaveiro' : 'Pulseira'} • {order.items[0].quantity} un • {order.items[0].width}
                   </p>
                 </div>
               </div>

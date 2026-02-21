@@ -9,7 +9,7 @@ export type OrderStatus =
   | 'cancelado';
 
 export type LanyardWidth = '15mm' | '20mm' | '25mm';
-export type ProductType = 'tirante' | 'chaveiro' | 'pulseira';
+export type ProductType = 'tirante' | 'tirante_copo' | 'chaveiro' | 'pulseira';
 
 export type FinishingType = string;
 
@@ -40,6 +40,7 @@ export interface PricingConfig {
   // Preços por Tipo e Largura
   prices: {
     tirante: Record<LanyardWidth, number>;
+    tirante_copo: Record<LanyardWidth, number>;
     chaveiro: Record<LanyardWidth, number>;
     pulseira: Record<LanyardWidth, number>;
   };

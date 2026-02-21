@@ -150,7 +150,7 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">R$</span>
             <PriceInput
-              value={values.prices[type][width]}
+              value={values.prices[type]?.[width] || 0}
               onChange={(val) => handlePriceChange(type, width, val)}
               className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
@@ -176,6 +176,8 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
 
           <div className="space-y-2">
             {renderPriceSection('tirante', 'Tirantes', '90cm')}
+            <div className="my-6 border-t border-slate-800"></div>
+            {renderPriceSection('tirante_copo', 'Tirante Copo', '140cm')}
             <div className="my-6 border-t border-slate-800"></div>
             {renderPriceSection('chaveiro', 'Chaveiros', '29cm')}
             <div className="my-6 border-t border-slate-800"></div>
@@ -244,7 +246,7 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                     inputMode="decimal"
                     value={formatDisplay(values.taxRate)}
                     onChange={(e) => handleTaxChange(parseFloat(e.target.value.replace(',', '.')) || 0)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">%</span>
                 </div>
@@ -394,7 +396,7 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                       type="number" 
                       value={values.productionSettings?.calandra.timeSeconds || 0}
                       onChange={(e) => handleProductionChange('calandra', 'timeSeconds', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200"
                     />
                   </div>
                </div>

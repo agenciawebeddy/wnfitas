@@ -2,6 +2,7 @@ import { LanyardWidth, ProductionCalculation, PricingConfig, ProductType } from 
 
 const PRODUCT_LENGTHS: Record<ProductType, number> = {
   tirante: 0.90,
+  tirante_copo: 1.40,
   chaveiro: 0.29,
   pulseira: 0.35
 };
@@ -18,7 +19,8 @@ export const calculateProduction = (
   const itemsPerRow = 5; 
 
   // Chaveiros e Pulseiras sempre usam bobina de 15cm (150mm)
-  if (productType === 'tirante' && width === '25mm') {
+  // Tirantes de 25mm usam bobina de 22cm
+  if ((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') {
     paperWidthMm = 220;
   } else {
     paperWidthMm = 150; 

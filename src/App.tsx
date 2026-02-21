@@ -149,6 +149,7 @@ const MainApp: React.FC = () => {
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>({
     prices: {
       tirante: { '15mm': 1.10, '20mm': 2.10, '25mm': 2.80 },
+      tirante_copo: { '15mm': 1.80, '20mm': 3.20, '25mm': 4.10 },
       chaveiro: { '15mm': 0.80, '20mm': 1.20, '25mm': 1.50 },
       pulseira: { '15mm': 0.90, '20mm': 1.30, '25mm': 1.60 }
     },
