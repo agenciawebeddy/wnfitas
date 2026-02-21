@@ -54,7 +54,6 @@ const Inventory: React.FC<{
 
   const formatQty = (item: InventoryItem) => {
     if (item.category === 'fita' || item.category === 'papel') {
-      // Exibe como metros, usando vírgula mas sem forçar .00
       return item.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
     }
     return item.quantity.toString();
@@ -148,7 +147,11 @@ const MainApp: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>({
-    '15mm': 1.10, '20mm': 2.10, '25mm': 2.80,
+    prices: {
+      tirante: { '15mm': 1.10, '20mm': 2.10, '25mm': 2.80 },
+      chaveiro: { '15mm': 0.80, '20mm': 1.20, '25mm': 1.50 },
+      pulseira: { '15mm': 0.90, '20mm': 1.30, '25mm': 1.60 }
+    },
     finishings: [
       { name: 'argola', price: 0.03 }, { name: 'jacare', price: 0.31 },
       { name: 'fecho', price: 0.29 }, { name: 'trava', price: 0.11 },
@@ -165,7 +168,6 @@ const MainApp: React.FC = () => {
     }
   });
 
-  // Modal State
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -178,7 +180,6 @@ const MainApp: React.FC = () => {
     onConfirm: () => {},
   });
 
-  // Helper to map DB order to Frontend order
   const mapOrder = (o: any): Order => ({
     ...o,
     clientId: o.client_id,
@@ -187,18 +188,15 @@ const MainApp: React.FC = () => {
     totalValue: o.total_value
   });
 
-  // Fetch data from Supabase
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Fetch Clients
       const { data: clientsData } = await supabase.from('clients').select('*').order('name');
       if (clientsData) {
         setClients(clientsData.map((c: any) => ({ ...c, totalOrders: 0 })));
       }
 
-      // Fetch Inventory
       const { data: inventoryData } = await supabase.from('inventory').select('*').order('name');
       if (inventoryData) {
         setInventory(inventoryData.map((item: any) => ({
@@ -207,13 +205,11 @@ const MainApp: React.FC = () => {
         })));
       }
 
-      // Fetch Orders
       const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       if (ordersData) {
         setOrders(ordersData.map(mapOrder));
       }
 
-      // Fetch Pricing Config
       const { data: configData } = await supabase.from('pricing_configs').select('config').eq('user_id', user.id).single();
       if (configData) setPricingConfig(configData.config as any);
     };
@@ -221,7 +217,6 @@ const MainApp: React.FC = () => {
     fetchData();
   }, [user]);
 
-  // Persistence Handlers
   const handleSavePricing = async (newConfig: PricingConfig) => {
     setPricingConfig(newConfig);
     const { error } = await supabase.from('pricing_configs').upsert({
@@ -324,7 +319,6 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddOrder = async (order: Order) => {
-    // 1. Salvar o pedido no banco
     const { id, clientId, clientName, totalValue, opNumber, ...rest } = order as any;
     const { data, error } = await supabase.from('orders').insert([{ 
       ...rest, 
@@ -345,11 +339,9 @@ const MainApp: React.FC = () => {
       setOrders([newOrder, ...orders]);
       toast.success('Pedido criado com sucesso!');
 
-      // 2. Realizar baixa automática de estoque
       const item = order.items[0];
       const calc = order.calculation;
       
-      // Mapeamento de itens para baixa (Lógica flexível)
       const findStockItem = (namePart: string, category: string) => {
         return inventory.find(i => 
           i.name.toLowerCase().includes(namePart.toLowerCase()) || 
@@ -358,13 +350,10 @@ const MainApp: React.FC = () => {
       };
 
       const deductions: { item: InventoryItem | undefined, qty: number }[] = [
-        // Fita
         { item: findStockItem(`Fita Poliéster ${item.width}`, 'fita'), qty: calc.totalLinearMeters },
-        // Papel
         { item: inventory.find(i => i.category === 'papel' && i.name.includes(item.width === '25mm' ? '22cm' : '15cm')), qty: calc.paperConsumptionMeters }
       ];
 
-      // Acessórios
       item.finishings.forEach(f => {
         const stockItem = inventory.find(i => 
           i.name.toLowerCase().includes(f.type.toLowerCase()) || 
@@ -373,7 +362,6 @@ const MainApp: React.FC = () => {
         deductions.push({ item: stockItem, qty: f.quantity });
       });
 
-      // Executar as baixas
       for (const d of deductions) {
         if (d.item) {
           const newQty = Math.max(0, d.item.quantity - d.qty);
@@ -385,7 +373,6 @@ const MainApp: React.FC = () => {
         }
       }
 
-      // Atualizar estado local do inventário
       const { data: updatedInventory } = await supabase.from('inventory').select('*').order('name');
       if (updatedInventory) {
         setInventory(updatedInventory.map((item: any) => ({

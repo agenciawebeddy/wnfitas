@@ -14,7 +14,6 @@ interface OrdersProps {
   onDeleteOrder: (id: string) => void;
 }
 
-// Helper para estado inicial dos acabamentos
 interface FinishingState {
   selected: boolean;
   quantity: number;
@@ -22,12 +21,10 @@ interface FinishingState {
 
 type FinishingsMap = Record<FinishingType, FinishingState>;
 
-// Helper formatting function for pt-BR currency display
 const formatCurrency = (val: number, minimumFractionDigits = 2) => {
   return val.toLocaleString('pt-BR', { minimumFractionDigits, maximumFractionDigits: 2 });
 };
 
-// Helper for Status Labels and Colors
 const getStatusConfig = (status: OrderStatus) => {
   switch (status) {
     case 'orcamento': return { label: 'Orçamento', color: 'bg-slate-800 text-slate-400 border-slate-700' };
@@ -42,19 +39,12 @@ const getStatusConfig = (status: OrderStatus) => {
   }
 };
 
-const PRODUCT_LENGTHS: Record<ProductType, number> = {
-  tirante: 0.90,
-  chaveiro: 0.29,
-  pulseira: 0.35
-};
-
 export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Form State
   const [selectedClient, setSelectedClient] = useState('');
   const [productType, setProductType] = useState<ProductType>('tirante');
   const [width, setWidth] = useState<LanyardWidth>('20mm');
@@ -65,7 +55,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const [priceBreakdown, setPriceBreakdown] = useState({ tape: 0, finishings: 0 });
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>('orcamento');
 
-  // Finishings State (Multi-select)
   const createInitialFinishingsState = (orderQty: number) => {
     const state: FinishingsMap = {};
     pricingConfig.finishings.forEach(f => {
@@ -95,9 +84,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   }, [productType, width, quantity, pricingConfig]);
 
   useEffect(() => {
-    // O preço base na configuração é para 90cm (0.90m)
-    const lengthMeters = PRODUCT_LENGTHS[productType];
-    const basePriceForLength = (pricingConfig[width] / 0.90) * lengthMeters;
+    const basePrice = pricingConfig.prices[productType][width];
     
     let totalFinishingsCost = 0;
     pricingConfig.finishings.forEach(item => {
@@ -111,7 +98,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     const factor = rule ? rule.factor : 1;
     setAppliedFactor(factor);
 
-    const tapeCostAdjusted = basePriceForLength * factor;
+    const tapeCostAdjusted = basePrice * factor;
     const avgFinishingCost = quantity > 0 ? totalFinishingsCost / quantity : 0;
     
     const rawPrice = tapeCostAdjusted + avgFinishingCost;
@@ -122,13 +109,10 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setUnitPrice(parseFloat(finalPrice.toFixed(3)));
   }, [width, finishings, pricingConfig, quantity, productType]);
 
-  // Stock Validation Logic
   const [stockValidation, setStockValidation] = useState<{ isValid: boolean; missingItems: string[] }>({ isValid: true, missingItems: [] });
 
   useEffect(() => {
     const missing: string[] = [];
-    
-    // Helper to find item by name or category
     const findItem = (namePart: string, category: string) => {
       return inventory.find(i => 
         i.name.toLowerCase().includes(namePart.toLowerCase()) || 
@@ -138,7 +122,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
     const formatStock = (qty: number) => qty.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 
-    // 1. Check Tape
     const tapeItem = findItem(`Fita Poliéster ${width}`, 'fita');
     if (!tapeItem) {
       missing.push(`Fita ${width} não encontrada no estoque`);
@@ -146,7 +129,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       missing.push(`Fita ${width} insuficiente (${formatStock(tapeItem.quantity)}m / Nec: ${formatStock(calc.totalLinearMeters)}m)`);
     }
 
-    // 2. Check Paper
     const paperWidth = (productType === 'tirante' && width === '25mm') ? '22cm' : '15cm';
     const paperItem = inventory.find(i => i.category === 'papel' && i.name.includes(paperWidth));
     if (!paperItem) {
@@ -155,7 +137,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       missing.push(`Papel ${paperWidth} insuficiente (${formatStock(paperItem.quantity)}m / Nec: ${formatStock(calc.paperConsumptionMeters)}m)`);
     }
 
-    // 4. Check Finishings
     pricingConfig.finishings.forEach(f => {
       if (finishings[f.name]?.selected) {
         const needed = finishings[f.name].quantity;
@@ -303,7 +284,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Coluna Esquerda: Dados do Pedido */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 space-y-6">
               <div className="flex items-center gap-2 text-blue-400 mb-2">
@@ -449,9 +429,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       })}
                     </tbody>
                   </table>
-                  <p className="p-3 text-[10px] text-slate-500 italic">
-                    * Informe a quantidade total de peças que serão usadas em todo o pedido. O sistema calculará o custo médio por cordão.
-                  </p>
                 </div>
               </div>
 
@@ -490,7 +467,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
             </div>
           </div>
 
-          {/* Coluna Direita: Simulação de Produção */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 space-y-6 sticky top-6">
               <div className="flex items-center gap-2 text-blue-400 mb-2">
@@ -552,13 +528,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     <p className="text-xl font-bold text-slate-100">{calc.estimatedTimeCalandra}</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-4 flex gap-3">
-                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0" />
-                <p className="text-[11px] text-orange-200/70 leading-relaxed">
-                  <strong className="text-orange-400">Atenção:</strong> O cálculo inclui 5% de margem de segurança para o papel e quebra de produção.
-                </p>
               </div>
             </div>
           </div>
@@ -655,14 +624,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
             </div>
           );
         })}
-
-        {filteredOrders.length === 0 && (
-          <div className="py-20 text-center border-2 border-dashed border-slate-800 rounded-2xl">
-            <ShoppingCart className="w-12 h-12 text-slate-800 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-slate-500">Nenhum pedido encontrado</h3>
-            <p className="text-slate-600">Tente ajustar seus filtros ou busque por outro termo.</p>
-          </div>
-        )}
       </div>
     </div>
   );

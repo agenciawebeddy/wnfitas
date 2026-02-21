@@ -11,13 +11,12 @@ export type OrderStatus =
 export type LanyardWidth = '15mm' | '20mm' | '25mm';
 export type ProductType = 'tirante' | 'chaveiro' | 'pulseira';
 
-// FinishingType agora é apenas string pois é dinâmico
 export type FinishingType = string;
 
 export interface QuantityRule {
   min: number;
   max: number;
-  factor: number; // Multiplicador de preço
+  factor: number;
 }
 
 export interface FinishingItem {
@@ -27,31 +26,27 @@ export interface FinishingItem {
 
 export interface ProductionSettings {
   plotter: {
-    referenceDistanceMeters: number; // ex: 0.90
-    timeMinutes: number; // ex: 4
-    timeSeconds: number; // ex: 11
+    referenceDistanceMeters: number;
+    timeMinutes: number;
+    timeSeconds: number;
   };
   calandra: {
-    referenceDistanceMeters: number; // ex: 0.90
-    timeSeconds: number; // ex: 3
+    referenceDistanceMeters: number;
+    timeSeconds: number;
   };
 }
 
 export interface PricingConfig {
-  // Fitas
-  '15mm': number;
-  '20mm': number;
-  '25mm': number;
+  // Preços por Tipo e Largura
+  prices: {
+    tirante: Record<LanyardWidth, number>;
+    chaveiro: Record<LanyardWidth, number>;
+    pulseira: Record<LanyardWidth, number>;
+  };
   
-  // Acabamentos Dinâmicos
   finishings: FinishingItem[];
-
-  // Regras de Quantidade
   quantityRules: QuantityRule[];
-  // Impostos
-  taxRate: number; // Porcentagem (ex: 15 para 15%)
-  
-  // Configurações de Maquinário
+  taxRate: number;
   productionSettings: ProductionSettings;
 }
 
@@ -66,7 +61,7 @@ export interface Client {
 
 export interface OrderFinishing {
   type: FinishingType;
-  quantity: number; // Quantidade TOTAL deste acabamento no pedido
+  quantity: number;
 }
 
 export interface OrderItem {
@@ -82,18 +77,18 @@ export interface OrderItem {
 export interface ProductionCalculation {
   totalLinearMeters: number;
   paperRows: number;
-  paperMetersPerSide: number; // Metragem exata para um lado (sem margem)
-  paperConsumptionMeters: number; // Total com margem e ambos os lados
+  paperMetersPerSide: number;
+  paperConsumptionMeters: number;
   estimatedCost: number;
-  estimatedTimePlotter: string; // "HH:MM"
-  estimatedTimeCalandra: string; // "HH:MM"
+  estimatedTimePlotter: string;
+  estimatedTimeCalandra: string;
 }
 
 export interface Order {
   id: string;
   clientId: string;
   clientName: string;
-  date: string; // ISO date
+  date: string;
   deadline: string;
   status: OrderStatus;
   items: OrderItem[];
@@ -110,11 +105,4 @@ export interface InventoryItem {
   unit: string;
   minStock: number;
   location?: string;
-}
-
-export interface ProductionStats {
-  metersPrintedToday: number;
-  metersCalenderedToday: number;
-  activeOrders: number;
-  monthlyRevenue: number;
 }
