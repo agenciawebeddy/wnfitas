@@ -2,8 +2,11 @@
 
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Users, ShoppingCart, Ruler, Package, Download, Filter, TrendingUp, DollarSign } from 'lucide-react';
+import { FileText, Users, ShoppingCart, Ruler, Package, Download, FileSpreadsheet, TrendingUp, DollarSign } from 'lucide-react';
 import { Order, Client, InventoryItem } from '../types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 interface ReportsProps {
   orders: Order[];
@@ -24,6 +27,93 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
       case 'pulseira': return 'Pulseira';
       default: return type;
     }
+  };
+
+  // Exportar para PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const date = new Date().toLocaleDateString('pt-BR');
+
+    doc.setFontSize(18);
+    doc.text('WNFitas - Relatório Industrial', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${date}`, 14, 28);
+
+    // Tabela de Pedidos
+    doc.setFontSize(14);
+    doc.text('Pedidos Recentes', 14, 40);
+    autoTable(doc, {
+      startY: 45,
+      head: [['OP', 'Data', 'Cliente', 'Produto', 'Qtd', 'Valor']],
+      body: orders.map(o => [
+        `#${o.opNumber}`,
+        new Date(o.date).toLocaleDateString('pt-BR'),
+        o.clientName,
+        getProductLabel(o.items[0].productType),
+        o.items[0].quantity,
+        formatCurrency(o.totalValue)
+      ]),
+    });
+
+    // Tabela de Estoque
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    doc.text('Resumo de Estoque', 14, finalY + 15);
+    autoTable(doc, {
+      startY: finalY + 20,
+      head: [['Item', 'Categoria', 'Quantidade', 'Unidade']],
+      body: inventory.map(i => [
+        i.name,
+        i.category,
+        i.quantity,
+        i.unit
+      ]),
+    });
+
+    doc.save(`relatorio-wnfitas-${date.replace(/\//g, '-')}.pdf`);
+  };
+
+  // Exportar para Excel
+  const exportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+    
+    // Aba de Pedidos
+    const ordersData = orders.map(o => ({
+      'OP': o.opNumber,
+      'Data': new Date(o.date).toLocaleDateString('pt-BR'),
+      'Cliente': o.clientName,
+      'Produto': getProductLabel(o.items[0].productType),
+      'Largura': o.items[0].width,
+      'Quantidade': o.items[0].quantity,
+      'Valor Total': o.totalValue,
+      'Status': o.status,
+      'Fita (m)': o.calculation.totalLinearMeters,
+      'Papel (m)': o.calculation.paperConsumptionMeters
+    }));
+    const wsOrders = XLSX.utils.json_to_sheet(ordersData);
+    XLSX.utils.book_append_sheet(wb, wsOrders, "Pedidos");
+
+    // Aba de Clientes
+    const clientsData = clients.map(c => ({
+      'Nome': c.name,
+      'CNPJ': c.cnpj,
+      'Email': c.email,
+      'Telefone': c.phone
+    }));
+    const wsClients = XLSX.utils.json_to_sheet(clientsData);
+    XLSX.utils.book_append_sheet(wb, wsClients, "Clientes");
+
+    // Aba de Estoque
+    const inventoryData = inventory.map(i => ({
+      'Item': i.name,
+      'Categoria': i.category,
+      'Quantidade': i.quantity,
+      'Unidade': i.unit,
+      'Estoque Mínimo': i.minStock
+    }));
+    const wsInventory = XLSX.utils.json_to_sheet(inventoryData);
+    XLSX.utils.book_append_sheet(wb, wsInventory, "Estoque");
+
+    XLSX.writeFile(wb, `relatorio-wnfitas-${new Date().getTime()}.xlsx`);
   };
 
   // Dados para Gráfico de Pedidos por Status
@@ -54,9 +144,20 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
           <h2 className="text-3xl font-bold text-slate-100">Relatórios e Análises</h2>
           <p className="text-slate-400">Acompanhe o desempenho e consumo da sua fábrica.</p>
         </div>
-        <button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors">
-          <Download className="w-4 h-4" /> Exportar PDF
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={exportToExcel}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors shadow-lg shadow-emerald-900/20"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
+          </button>
+          <button 
+            onClick={exportToPDF}
+            className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors"
+          >
+            <Download className="w-4 h-4" /> Exportar PDF
+          </button>
+        </div>
       </div>
 
       {/* Navegação de Abas */}
