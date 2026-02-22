@@ -38,24 +38,26 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
   // --- EXPORTAÇÕES INDIVIDUAIS ---
 
   const exportClients = (format: 'pdf' | 'excel') => {
-    const date = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
     if (format === 'pdf') {
-      const doc = new jsPDF('l', 'mm', 'a4');
+      const doc = new jsPDF('p', 'mm', 'a4');
       doc.setFontSize(16);
-      doc.text('WNFitas - Relatório de Clientes', 14, 20);
+      doc.text('WNFitas - Relatório de Cadastro de Clientes', 14, 20);
       autoTable(doc, {
         startY: 30,
-        head: [['Nome', 'CNPJ/CPF', 'Telefone', 'E-mail', 'Pedidos', 'Total Faturado']],
-        body: clientReport.map(c => [c.name, c.cnpj, c.phone || '-', c.email || '-', c.orderCount, formatCurrency(c.totalValue)]),
+        head: [['Nome / Razão Social', 'CNPJ / CPF', 'Telefone', 'E-mail']],
+        body: clients.map(c => [c.name, c.cnpj, c.phone || '-', c.email || '-']),
       });
-      doc.save(`clientes-wnfitas-${date}.pdf`);
+      doc.save(`relatorio-clientes.pdf`);
     } else {
-      const ws = XLSX.utils.json_to_sheet(clientReport.map(c => ({
-        'Nome': c.name, 'CNPJ': c.cnpj, 'Telefone': c.phone, 'E-mail': c.email, 'Pedidos': c.orderCount, 'Total Faturado': c.totalValue
+      const ws = XLSX.utils.json_to_sheet(clients.map(c => ({
+        'Nome / Razão Social': c.name, 
+        'CNPJ / CPF': c.cnpj, 
+        'Telefone': c.phone || '-', 
+        'E-mail': c.email || '-'
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Clientes");
-      XLSX.writeFile(wb, `clientes-wnfitas-${date}.xlsx`);
+      XLSX.writeFile(wb, `relatorio-clientes.xlsx`);
     }
   };
 
