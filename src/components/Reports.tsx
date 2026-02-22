@@ -29,12 +29,6 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     }
   };
 
-  const clientReport = clients.map(c => {
-    const clientOrders = orders.filter(o => o.clientId === c.id);
-    const totalValue = clientOrders.reduce((acc, o) => acc + o.totalValue, 0);
-    return { ...c, totalValue, orderCount: clientOrders.length };
-  }).sort((a, b) => b.totalValue - a.totalValue);
-
   // --- EXPORTAÇÕES INDIVIDUAIS ---
 
   const exportClients = (format: 'pdf' | 'excel') => {
@@ -245,20 +239,20 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
           <table className="w-full text-left">
             <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
               <tr>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Pedidos</th>
-                <th className="px-6 py-4 text-right">Total Faturado</th>
+                <th className="px-6 py-4">Cliente / CNPJ</th>
+                <th className="px-6 py-4">Telefone</th>
+                <th className="px-6 py-4">E-mail</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {clientReport.map(c => (
+              {clients.map(c => (
                 <tr key={c.id} className="hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-bold text-slate-200">{c.name}</p>
                     <p className="text-xs text-slate-500">{c.cnpj}</p>
                   </td>
-                  <td className="px-6 py-4 text-slate-300">{c.orderCount}</td>
-                  <td className="px-6 py-4 text-right font-bold text-emerald-400">{formatCurrency(c.totalValue)}</td>
+                  <td className="px-6 py-4 text-slate-300">{c.phone || '---'}</td>
+                  <td className="px-6 py-4 text-slate-300">{c.email || '---'}</td>
                 </tr>
               ))}
             </tbody>
