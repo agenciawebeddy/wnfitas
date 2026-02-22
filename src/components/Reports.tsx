@@ -29,21 +29,44 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     }
   };
 
+  // Dados enriquecidos de clientes para relatórios
+  const clientReport = clients.map(c => {
+    const clientOrders = orders.filter(o => o.clientId === c.id);
+    const totalValue = clientOrders.reduce((acc, o) => acc + o.totalValue, 0);
+    return { ...c, totalValue, orderCount: clientOrders.length };
+  }).sort((a, b) => b.totalValue - a.totalValue);
+
   // Exportar para PDF
   const exportToPDF = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF('l', 'mm', 'a4'); // Paisagem para caber mais dados
     const date = new Date().toLocaleDateString('pt-BR');
 
     doc.setFontSize(18);
-    doc.text('WNFitas - Relatório Industrial', 14, 20);
+    doc.text('WNFitas - Relatório Industrial Completo', 14, 20);
     doc.setFontSize(10);
     doc.text(`Gerado em: ${date}`, 14, 28);
 
-    // Tabela de Pedidos
+    // Tabela de Clientes (Todos os dados)
     doc.setFontSize(14);
-    doc.text('Pedidos Recentes', 14, 40);
+    doc.text('Relatório de Clientes', 14, 40);
     autoTable(doc, {
       startY: 45,
+      head: [['Nome / Razão Social', 'CNPJ/CPF', 'Telefone', 'E-mail', 'Pedidos', 'Total Faturado']],
+      body: clientReport.map(c => [
+        c.name,
+        c.cnpj,
+        c.phone || '---',
+        c.email || '---',
+        c.orderCount,
+        formatCurrency(c.totalValue)
+      ]),
+    });
+
+    // Tabela de Pedidos
+    const ordersY = (doc as any).lastAutoTable.finalY + 15;
+    doc.text('Pedidos Recentes', 14, ordersY);
+    autoTable(doc, {
+      startY: ordersY + 5,
       head: [['OP', 'Data', 'Cliente', 'Produto', 'Qtd', 'Valor']],
       body: orders.map(o => [
         `#${o.opNumber}`,
@@ -56,26 +79,40 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     });
 
     // Tabela de Estoque
-    const finalY = (doc as any).lastAutoTable.finalY || 150;
-    doc.text('Resumo de Estoque', 14, finalY + 15);
-    autoTable(doc, {
-      startY: finalY + 20,
-      head: [['Item', 'Categoria', 'Quantidade', 'Unidade']],
-      body: inventory.map(i => [
-        i.name,
-        i.category,
-        i.quantity,
-        i.unit
-      ]),
-    });
+    const inventoryY = (doc as any).lastAutoTable.finalY + 15;
+    if (inventoryY < 180) { // Evitar quebra de página estranha
+        doc.text('Resumo de Estoque', 14, inventoryY);
+        autoTable(doc, {
+          startY: inventoryY + 5,
+          head: [['Item', 'Categoria', 'Quantidade', 'Unidade']],
+          body: inventory.map(i => [
+            i.name,
+            i.category,
+            i.quantity,
+            i.unit
+          ]),
+        });
+    }
 
-    doc.save(`relatorio-wnfitas-${date.replace(/\//g, '-')}.pdf`);
+    doc.save(`relatorio-completo-wnfitas-${date.replace(/\//g, '-')}.pdf`);
   };
 
   // Exportar para Excel
   const exportToExcel = () => {
     const wb = XLSX.utils.book_new();
     
+    // Aba de Clientes (Todos os dados)
+    const clientsData = clientReport.map(c => ({
+      'Nome / Razão Social': c.name,
+      'CNPJ / CPF': c.cnpj,
+      'Telefone': c.phone,
+      'E-mail': c.email,
+      'Total de Pedidos': c.orderCount,
+      'Faturamento Total (R$)': c.totalValue
+    }));
+    const wsClients = XLSX.utils.json_to_sheet(clientsData);
+    XLSX.utils.book_append_sheet(wb, wsClients, "Clientes");
+
     // Aba de Pedidos
     const ordersData = orders.map(o => ({
       'OP': o.opNumber,
@@ -91,16 +128,6 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     }));
     const wsOrders = XLSX.utils.json_to_sheet(ordersData);
     XLSX.utils.book_append_sheet(wb, wsOrders, "Pedidos");
-
-    // Aba de Clientes
-    const clientsData = clients.map(c => ({
-      'Nome': c.name,
-      'CNPJ': c.cnpj,
-      'Email': c.email,
-      'Telefone': c.phone
-    }));
-    const wsClients = XLSX.utils.json_to_sheet(clientsData);
-    XLSX.utils.book_append_sheet(wb, wsClients, "Clientes");
 
     // Aba de Estoque
     const inventoryData = inventory.map(i => ({
@@ -124,13 +151,6 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
   ];
 
   const COLORS = ['#334155', '#3b82f6', '#10b981', '#ef4444'];
-
-  // Relatório de Clientes (Top 5 por valor)
-  const clientReport = clients.map(c => {
-    const clientOrders = orders.filter(o => o.clientId === c.id);
-    const totalValue = clientOrders.reduce((acc, o) => acc + o.totalValue, 0);
-    return { ...c, totalValue, orderCount: clientOrders.length };
-  }).sort((a, b) => b.totalValue - a.totalValue);
 
   // Relatório de Insumos
   const fitas = inventory.filter(i => i.category === 'fita');
