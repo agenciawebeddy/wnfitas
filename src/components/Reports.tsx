@@ -64,25 +64,46 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     if (format === 'pdf') {
       const doc = new jsPDF('l', 'mm', 'a4');
       doc.setFontSize(16);
-      doc.text('WNFitas - Relatório de Pedidos', 14, 20);
+      doc.text('WNFitas - Relatório de Pedidos Detalhado', 14, 20);
       autoTable(doc, {
         startY: 30,
-        head: [['OP', 'Data', 'Cliente', 'Produto', 'Qtd', 'Fita (m)', 'Papel (m)', 'Valor']],
+        head: [['OP', 'Data', 'Prazo', 'Cliente', 'Produto', 'Larg.', 'Qtd', 'Status', 'Fita (m)', 'Papel (m)', 'Valor']],
         body: orders.map(o => [
-          `#${o.opNumber}`, new Date(o.date).toLocaleDateString('pt-BR'), o.clientName, 
-          getProductLabel(o.items[0].productType), o.items[0].quantity, 
-          o.calculation.totalLinearMeters, o.calculation.paperConsumptionMeters, formatCurrency(o.totalValue)
+          `#${o.opNumber}`, 
+          new Date(o.date).toLocaleDateString('pt-BR'),
+          new Date(o.deadline).toLocaleDateString('pt-BR'),
+          o.clientName, 
+          getProductLabel(o.items[0].productType),
+          o.items[0].width,
+          o.items[0].quantity,
+          o.status.toUpperCase(),
+          o.calculation.totalLinearMeters, 
+          o.calculation.paperConsumptionMeters, 
+          formatCurrency(o.totalValue)
         ]),
+        styles: { fontSize: 8 }
       });
-      doc.save(`pedidos-wnfitas-${date}.pdf`);
+      doc.save(`pedidos-detalhado-wnfitas-${date}.pdf`);
     } else {
       const ws = XLSX.utils.json_to_sheet(orders.map(o => ({
-        'OP': o.opNumber, 'Data': o.date, 'Cliente': o.clientName, 'Produto': getProductLabel(o.items[0].productType),
-        'Qtd': o.items[0].quantity, 'Fita (m)': o.calculation.totalLinearMeters, 'Papel (m)': o.calculation.paperConsumptionMeters, 'Valor': o.totalValue
+        'OP': o.opNumber, 
+        'Data': o.date,
+        'Prazo': o.deadline,
+        'Cliente': o.clientName, 
+        'Produto': getProductLabel(o.items[0].productType),
+        'Largura': o.items[0].width,
+        'Quantidade': o.items[0].quantity,
+        'Status': o.status,
+        'Fita (m)': o.calculation.totalLinearMeters, 
+        'Papel (m)': o.calculation.paperConsumptionMeters,
+        'Custo Est. (R$)': o.calculation.estimatedCost,
+        'Tempo Plotter': o.calculation.estimatedTimePlotter,
+        'Tempo Calandra': o.calculation.estimatedTimeCalandra,
+        'Valor Total (R$)': o.totalValue
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
-      XLSX.writeFile(wb, `pedidos-wnfitas-${date}.xlsx`);
+      XLSX.writeFile(wb, `pedidos-detalhado-wnfitas-${date}.xlsx`);
     }
   };
 
@@ -91,20 +112,34 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     if (format === 'pdf') {
       const doc = new jsPDF('p', 'mm', 'a4');
       doc.setFontSize(16);
-      doc.text('WNFitas - Relatório de Insumos / Estoque', 14, 20);
+      doc.text('WNFitas - Relatório de Estoque Completo', 14, 20);
       autoTable(doc, {
         startY: 30,
-        head: [['Item', 'Categoria', 'Quantidade', 'Unidade', 'Mínimo']],
-        body: inventory.map(i => [i.name, i.category, i.quantity, i.unit, i.minStock]),
+        head: [['Item', 'Categoria', 'Qtd Atual', 'Unid.', 'Mínimo', 'Status']],
+        body: inventory.map(i => [
+          i.name, 
+          i.category.toUpperCase(), 
+          i.quantity, 
+          i.unit, 
+          i.minStock,
+          i.quantity <= i.minStock ? 'CRÍTICO' : 'OK'
+        ]),
+        headStyles: { fillColor: [30, 41, 59] }
       });
-      doc.save(`estoque-wnfitas-${date}.pdf`);
+      doc.save(`estoque-completo-wnfitas-${date}.pdf`);
     } else {
       const ws = XLSX.utils.json_to_sheet(inventory.map(i => ({
-        'Item': i.name, 'Categoria': i.category, 'Quantidade': i.quantity, 'Unidade': i.unit, 'Mínimo': i.minStock
+        'Item': i.name, 
+        'Categoria': i.category, 
+        'Quantidade Atual': i.quantity, 
+        'Unidade': i.unit, 
+        'Estoque Mínimo': i.minStock,
+        'Status': i.quantity <= i.minStock ? 'Crítico' : 'Normal',
+        'Localização': i.location || 'Não informada'
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Estoque");
-      XLSX.writeFile(wb, `estoque-wnfitas-${date}.xlsx`);
+      XLSX.writeFile(wb, `estoque-completo-wnfitas-${date}.xlsx`);
     }
   };
 
@@ -113,14 +148,12 @@ export const Reports: React.FC<ReportsProps> = ({ orders, clients, inventory }) 
     else if (activeTab === 'pedidos') exportOrders(format);
     else if (activeTab === 'insumos') exportInventory(format);
     else {
-      // Na visão geral, exporta os 3 arquivos separadamente
       exportClients(format);
       exportOrders(format);
       exportInventory(format);
     }
   };
 
-  // Dados para Gráfico
   const statusData = [
     { name: 'Orçamentos', value: orders.filter(o => o.status === 'orcamento').length },
     { name: 'Em Produção', value: orders.filter(o => ['impressao', 'calandra', 'finalizacao'].includes(o.status)).length },
