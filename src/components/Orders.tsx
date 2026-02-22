@@ -272,11 +272,15 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     // Header
     doc.setFillColor(30, 41, 59);
     doc.rect(0, 0, 210, 40, 'F');
+    
+    // Logo
+    doc.addImage('/logo.webp', 'WEBP', 14, 10, 40, 15);
+
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.text('FICHA DE PRODUÇÃO', 14, 20);
+    doc.setFontSize(20);
+    doc.text('FICHA DE PRODUÇÃO', 65, 22);
     doc.setFontSize(12);
-    doc.text(`OP #${order.opNumber}`, 14, 30);
+    doc.text(`OP #${order.opNumber}`, 65, 30);
     doc.text(`Data: ${new Date(order.date).toLocaleDateString('pt-BR')}`, 160, 20);
     doc.text(`Prazo: ${new Date(order.deadline).toLocaleDateString('pt-BR')}`, 160, 30);
 
