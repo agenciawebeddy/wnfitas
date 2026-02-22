@@ -12,63 +12,55 @@ export const calculateProduction = (
   width: LanyardWidth,
   quantity: number,
   config?: PricingConfig,
-  itemsPerRow: number = 5 // Adicionado parâmetro com valor padrão
+  itemsPerRow: number = 5 
 ): ProductionCalculation => {
   const lengthMeters = PRODUCT_LENGTHS[productType];
   
   let paperWidthMm = 150;
   const effectiveItemsPerRow = itemsPerRow > 0 ? itemsPerRow : 5;
 
-  // Chaveiros e Pulseiras sempre usam bobina de 15cm (150mm)
-  // Tirantes de 25mm usam bobina de 22cm
   if ((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') {
     paperWidthMm = 220;
   } else {
     paperWidthMm = 150; 
   }
   
-  // 1. Total de metros lineares de FITA
   const totalTapeMeters = quantity * lengthMeters;
-  
-  // 2. Cálculo de Papel por Lado
   const paperMetersPerSide = totalTapeMeters / effectiveItemsPerRow;
-  
-  // 3. Total de metros de IMPRESSÃO (Frente + Verso)
   const totalPrintMeters = totalTapeMeters * 2;
-
-  // 4. Cálculo de consumo de Papel TOTAL
   const rawPaperConsumption = totalPrintMeters / effectiveItemsPerRow;
   const paperConsumptionMeters = rawPaperConsumption * 1.05; 
 
-  // Estimativa de Custo
   const paperCost = paperConsumptionMeters * (paperWidthMm === 220 ? 1.50 : 1.10); 
   const tapeCost = totalTapeMeters * 0.40; 
   
   const estimatedCost = paperCost + tapeCost;
 
-  // 5. Cálculo de Tempo Estimado
   let timePlotterStr = "--:--";
   let timeCalandraStr = "--:--";
 
   if (config && config.productionSettings) {
+      // Plotter
       const pConfig = config.productionSettings.plotter;
       const pTotalSecondsRef = (pConfig.timeMinutes * 60) + pConfig.timeSeconds;
-      const pSpeedMetersPerSec = pConfig.referenceDistanceMeters / pTotalSecondsRef;
-      
-      const totalSecondsPlotter = paperConsumptionMeters / pSpeedMetersPerSec;
-      
-      const pHours = Math.floor(totalSecondsPlotter / 3600);
-      const pMinutes = Math.floor((totalSecondsPlotter % 3600) / 60);
-      timePlotterStr = `${pHours}h ${pMinutes}m`;
+      if (pTotalSecondsRef > 0) {
+        const pSpeedMetersPerSec = pConfig.referenceDistanceMeters / pTotalSecondsRef;
+        const totalSecondsPlotter = paperConsumptionMeters / pSpeedMetersPerSec;
+        const pHours = Math.floor(totalSecondsPlotter / 3600);
+        const pMinutes = Math.floor((totalSecondsPlotter % 3600) / 60);
+        timePlotterStr = `${pHours}h ${pMinutes}m`;
+      }
 
+      // Calandra
       const cConfig = config.productionSettings.calandra;
-      const cSpeedMetersPerSec = cConfig.referenceDistanceMeters / cConfig.timeSeconds;
-
-      const totalSecondsCalandra = paperConsumptionMeters / cSpeedMetersPerSec;
-
-      const cHours = Math.floor(totalSecondsCalandra / 3600);
-      const cMinutes = Math.floor((totalSecondsCalandra % 3600) / 60);
-      timeCalandraStr = `${cHours}h ${cMinutes}m`;
+      const cTotalSecondsRef = (cConfig.timeMinutes * 60) + cConfig.timeSeconds;
+      if (cTotalSecondsRef > 0) {
+        const cSpeedMetersPerSec = cConfig.referenceDistanceMeters / cTotalSecondsRef;
+        const totalSecondsCalandra = paperConsumptionMeters / cSpeedMetersPerSec;
+        const cHours = Math.floor(totalSecondsCalandra / 3600);
+        const cMinutes = Math.floor((totalSecondsCalandra % 3600) / 60);
+        timeCalandraStr = `${cHours}h ${cMinutes}m`;
+      }
   }
 
   return {

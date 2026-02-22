@@ -32,6 +32,7 @@ export interface ProductionSettings {
   };
   calandra: {
     referenceDistanceMeters: number;
+    timeMinutes: number;
     timeSeconds: number;
   };
 }

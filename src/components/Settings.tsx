@@ -390,13 +390,22 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs text-slate-500 mb-1">Segundos (Velocidade 4)</label>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Minutos</label>
+                    <input 
+                      type="number" 
+                      value={values.productionSettings?.calandra.timeMinutes || 0}
+                      onChange={(e) => handleProductionChange('calandra', 'timeMinutes', e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Segundos</label>
                     <input 
                       type="number" 
                       value={values.productionSettings?.calandra.timeSeconds || 0}
                       onChange={(e) => handleProductionChange('calandra', 'timeSeconds', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
                     />
                   </div>
                </div>
