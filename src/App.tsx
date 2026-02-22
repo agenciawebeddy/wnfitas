@@ -167,7 +167,7 @@ const MainApp: React.FC = () => {
     taxRate: 15,
     productionSettings: {
       plotter: { referenceDistanceMeters: 0.90, timeMinutes: 4, timeSeconds: 11 },
-      calandra: { referenceDistanceMeters: 0.90, timeSeconds: 3 }
+      calandra: { referenceDistanceMeters: 0.90, timeSeconds: 30 }
     }
   });
 
