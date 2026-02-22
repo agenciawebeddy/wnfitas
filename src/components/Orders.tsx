@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart } from 'lucide-react';
+import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Interface para corrigir erro de tipo do jsPDF com AutoTable
+interface jsPDFWithAutoTable extends jsPDF {
+  lastAutoTable: {
+    finalY: number;
+  };
+}
 
 interface OrdersProps {
   onNavigate: (view: string) => void;
@@ -253,6 +262,88 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     
     setViewMode('list');
     resetForm();
+  };
+
+  const downloadProductionSheet = (order: Order) => {
+    const doc = new jsPDF('p', 'mm', 'a4') as jsPDFWithAutoTable;
+    const item = order.items[0];
+    const calc = order.calculation;
+
+    // Header
+    doc.setFillColor(30, 41, 59);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text('FICHA DE PRODUÇÃO', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`OP #${order.opNumber}`, 14, 30);
+    doc.text(`Data: ${new Date(order.date).toLocaleDateString('pt-BR')}`, 160, 20);
+    doc.text(`Prazo: ${new Date(order.deadline).toLocaleDateString('pt-BR')}`, 160, 30);
+
+    // Client Info
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(14);
+    doc.text('DADOS DO CLIENTE', 14, 50);
+    doc.setFontSize(11);
+    doc.text(`Cliente: ${order.clientName}`, 14, 58);
+
+    // Product Info
+    doc.setFontSize(14);
+    doc.text('DETALHES DO PRODUTO', 14, 75);
+    autoTable(doc, {
+      startY: 80,
+      head: [['Produto', 'Largura', 'Quantidade', 'Cor Base']],
+      body: [[
+        item.productType.toUpperCase(),
+        item.width,
+        `${item.quantity} un`,
+        item.colorBase
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [37, 99, 235] }
+    });
+
+    // Production Calculations
+    doc.setFontSize(14);
+    doc.text('PARÂMETROS DE PRODUÇÃO', 14, doc.lastAutoTable.finalY + 15);
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 20,
+      head: [['Item', 'Necessário', 'Observação']],
+      body: [
+        ['Fita Poliéster', `${calc.totalLinearMeters} metros`, `Largura ${item.width}`],
+        ['Papel Sublimático', `${calc.paperConsumptionMeters} metros`, `Bobina ${item.width === '25mm' ? '22cm' : '15cm'}`],
+        ['Tempo Plotter (Est.)', calc.estimatedTimePlotter, 'Velocidade configurada'],
+        ['Tempo Calandra (Est.)', calc.estimatedTimeCalandra, 'Velocidade configurada']
+      ],
+      theme: 'striped'
+    });
+
+    // Finishings
+    if (item.finishings.length > 0) {
+      doc.setFontSize(14);
+      doc.text('ACABAMENTOS E MONTAGEM', 14, doc.lastAutoTable.finalY + 15);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Acabamento', 'Quantidade Total']],
+        body: item.finishings.map(f => [f.type.toUpperCase(), `${f.quantity} un`]),
+        theme: 'grid',
+        headStyles: { fillColor: [71, 85, 105] }
+      });
+    }
+
+    // Footer / Notes
+    const finalY = doc.lastAutoTable.finalY + 20;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, finalY, 196, finalY);
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Observações:', 14, finalY + 10);
+    doc.rect(14, finalY + 15, 182, 30);
+    
+    doc.text('Assinatura Responsável:', 14, finalY + 60);
+    doc.line(14, finalY + 65, 80, finalY + 65);
+
+    doc.save(`OP-${order.opNumber}-Producao.pdf`);
   };
 
   const filteredOrders = orders.filter(order => {
@@ -606,6 +697,13 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
                 </div>
                 <div className="flex gap-2">
+                  <button 
+                    onClick={() => downloadProductionSheet(order)}
+                    className="p-2.5 bg-slate-800 hover:bg-emerald-900/30 text-slate-400 hover:text-emerald-400 rounded-lg transition-all"
+                    title="Baixar Ficha de Produção"
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
                   <button 
                     onClick={() => handleEdit(order)} 
                     className="p-2.5 bg-slate-800 hover:bg-blue-900/30 text-slate-400 hover:text-blue-400 rounded-lg transition-all"
