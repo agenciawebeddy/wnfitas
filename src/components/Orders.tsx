@@ -67,24 +67,23 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const createInitialFinishingsState = (orderQty: number) => {
     const state: FinishingsMap = {};
     pricingConfig.finishings.forEach(f => {
-        state[f.name] = { selected: f.name === 'mosquetao', quantity: orderQty };
+        state[f.name] = { selected: false, quantity: orderQty };
     });
     return state;
   };
 
   const [finishings, setFinishings] = useState<FinishingsMap>(createInitialFinishingsState(100));
   
+  // Limpar seleções quando a quantidade mudar
   useEffect(() => {
     setFinishings(prev => {
         const newState = { ...prev };
         pricingConfig.finishings.forEach(f => {
-            if (!newState[f.name]) {
-                newState[f.name] = { selected: false, quantity: quantity };
-            }
+            newState[f.name] = { selected: false, quantity: quantity };
         });
         return newState;
     });
-  }, [pricingConfig.finishings, quantity]);
+  }, [quantity, pricingConfig.finishings]);
 
   const [calc, setCalc] = useState(calculateProduction('tirante', '20mm', 100, pricingConfig));
 
