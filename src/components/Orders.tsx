@@ -51,7 +51,7 @@ const getStatusConfig = (status: OrderStatus) => {
 export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamentos' | 'producao' | 'finalizados' | 'cancelados'>('todos');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'producao' | 'concluido' | 'cancelado'>('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [selectedClient, setSelectedClient] = useState('');
@@ -352,18 +352,29 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     const matchesSearch = order.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || (order.opNumber && order.opNumber.includes(searchTerm));
     let matchesStatus = true;
     
-    if (statusFilter === 'orcamentos') {
+    if (statusFilter === 'orcamento') {
       matchesStatus = order.status === 'orcamento';
+    } else if (statusFilter === 'aprovado') {
+      matchesStatus = order.status === 'aprovado';
     } else if (statusFilter === 'producao') {
-      matchesStatus = ['aprovado', 'impressao', 'calandra', 'finalizacao'].includes(order.status);
-    } else if (statusFilter === 'finalizados') {
+      matchesStatus = ['impressao', 'calandra', 'finalizacao'].includes(order.status);
+    } else if (statusFilter === 'concluido') {
       matchesStatus = ['concluido', 'entregue'].includes(order.status);
-    } else if (statusFilter === 'cancelados') {
+    } else if (statusFilter === 'cancelado') {
       matchesStatus = order.status === 'cancelado';
     }
     
     return matchesSearch && matchesStatus;
   });
+
+  const filterLabels: Record<typeof statusFilter, string> = {
+    todos: 'Todos',
+    orcamento: 'Orçamentos',
+    aprovado: 'Aprovados',
+    producao: 'Em Produção',
+    concluido: 'Finalizados',
+    cancelado: 'Cancelados'
+  };
 
   if (viewMode === 'new') {
     const totalSale = unitPrice * quantity;
@@ -667,14 +678,14 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
-          {(['todos', 'orcamentos', 'producao', 'finalizados', 'cancelados'] as const).map(f => (
+        <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 overflow-x-auto">
+          {(['todos', 'orcamento', 'aprovado', 'producao', 'concluido', 'cancelado'] as const).map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
-              className={`px-4 py-2 rounded-md text-xs font-bold uppercase transition-all ${statusFilter === f ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`px-4 py-2 rounded-md text-xs font-bold uppercase transition-all whitespace-nowrap ${statusFilter === f ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
             >
-              {f}
+              {filterLabels[f]}
             </button>
           ))}
         </div>
