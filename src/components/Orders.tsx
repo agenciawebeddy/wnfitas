@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download } from 'lucide-react';
+import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Tag } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
 import { jsPDF } from 'jspdf';
@@ -60,6 +60,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const [quantity, setQuantity] = useState(100);
   const [deadline, setDeadline] = useState('');
   const [unitPrice, setUnitPrice] = useState(0);
+  const [discount, setDiscount] = useState(0);
   const [appliedFactor, setAppliedFactor] = useState(1);
   const [priceBreakdown, setPriceBreakdown] = useState({ tape: 0, finishings: 0 });
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>('orcamento');
@@ -112,9 +113,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     
     // Lógica de Desconto: Somente Corte
     const isOnlyCorte = activeFinishings.length === 1 && activeFinishings[0].name.toLowerCase().includes('corte');
-    const discount = isOnlyCorte ? 0.30 : 0;
+    const discountPerUnit = isOnlyCorte ? 0.30 : 0;
 
-    const rawPrice = (tapeCostAdjusted + avgFinishingCost) - discount;
+    const rawPrice = (tapeCostAdjusted + avgFinishingCost) - discountPerUnit;
     const taxMultiplier = 1 + (pricingConfig.taxRate / 100);
     const finalPrice = rawPrice * taxMultiplier;
 
@@ -200,6 +201,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setWidth('20mm');
     setQuantity(100);
     setDeadline('');
+    setDiscount(0);
     setCurrentStatus('orcamento');
     setFinishings(createInitialFinishingsState(100));
   };
@@ -209,6 +211,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setSelectedClient(order.clientId);
     setDeadline(order.deadline);
     setCurrentStatus(order.status);
+    setDiscount(order.discount || 0);
     const item = order.items[0];
     setProductType(item.productType || 'tirante');
     setWidth(item.width);
@@ -252,7 +255,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       clientName: client?.name || 'Cliente',
       deadline: deadline || new Date().toISOString().split('T')[0],
       status: finalStatus,
-      totalValue: unitPrice * quantity,
+      totalValue: (unitPrice * quantity) - discount,
+      discount: discount,
       calculation: calc,
       items: [{ productType, width, quantity, unitPrice, colorBase: 'Branco', finishings: activeFinishings }]
     };
@@ -383,7 +387,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   };
 
   if (viewMode === 'new') {
-    const totalSale = unitPrice * quantity;
+    const totalSaleRaw = unitPrice * quantity;
+    const totalSale = totalSaleRaw - discount;
     const margin = totalSale > 0 ? ((totalSale - calc.estimatedCost) / totalSale) * 100 : 0;
 
     return (
@@ -500,6 +505,21 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Desconto Especial (R$)</label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                    <input 
+                      type="number" 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-3 text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none font-bold"
+                      placeholder="0,00"
+                      value={discount}
+                      onChange={e => setDiscount(Number(e.target.value))}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">Valor fixo a ser subtraído do total do pedido.</p>
                 </div>
               </div>
 
@@ -626,6 +646,12 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   <span className="text-slate-500">Valor Total Venda</span>
                   <span className="text-blue-400 font-bold text-lg">R$ {formatCurrency(totalSale)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-xs text-emerald-400">
+                    <span>Desconto Aplicado</span>
+                    <span>- R$ {formatCurrency(discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Margem Estimada</span>
                   <span className={`font-bold ${margin > 50 ? 'text-emerald-400' : 'text-orange-400'}`}>{margin.toFixed(1)}%</span>
@@ -721,7 +747,12 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
               <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-slate-800 pt-4 md:pt-0">
                 <div className="text-right">
                   <p className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Total</p>
-                  <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
+                  <div className="flex flex-col items-end">
+                    <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
+                    {order.discount && order.discount > 0 && (
+                      <span className="text-[10px] text-emerald-500/70 font-medium">Desc: -R$ {formatCurrency(order.discount)}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button 

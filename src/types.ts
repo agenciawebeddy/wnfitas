@@ -96,6 +96,7 @@ export interface Order {
   items: OrderItem[];
   calculation: ProductionCalculation;
   totalValue: number;
+  discount?: number;
   opNumber?: string;
 }
 
