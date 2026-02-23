@@ -94,7 +94,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     const basePrice = pricingConfig.prices[productType]?.[width] || 0;
     
     let totalFinishingsCost = 0;
-    pricingConfig.finishings.forEach(item => {
+    const activeFinishings = pricingConfig.finishings.filter(f => finishings[f.name]?.selected);
+    
+    activeFinishings.forEach(item => {
       const state = finishings[item.name];
       if (state && state.selected) {
         totalFinishingsCost += (item.price * state.quantity);
@@ -108,7 +110,11 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     const tapeCostAdjusted = basePrice * factor;
     const avgFinishingCost = quantity > 0 ? totalFinishingsCost / quantity : 0;
     
-    const rawPrice = tapeCostAdjusted + avgFinishingCost;
+    // Lógica de Desconto: Somente Corte
+    const isOnlyCorte = activeFinishings.length === 1 && activeFinishings[0].name.toLowerCase().includes('corte');
+    const discount = isOnlyCorte ? 0.30 : 0;
+
+    const rawPrice = (tapeCostAdjusted + avgFinishingCost) - discount;
     const taxMultiplier = 1 + (pricingConfig.taxRate / 100);
     const finalPrice = rawPrice * taxMultiplier;
 

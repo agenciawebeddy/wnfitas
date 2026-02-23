@@ -156,9 +156,9 @@ const MainApp: React.FC = () => {
       pulseira: { '15mm': 0.90, '20mm': 1.30, '25mm': 1.60 }
     },
     finishings: [
-      { name: 'argola', price: 0.03 }, { name: 'jacare', price: 0.31 },
-      { name: 'fecho', price: 0.29 }, { name: 'trava', price: 0.11 },
-      { name: 'mosquetao', price: 1.06 },
+      { name: 'corte', price: 0.00 }, { name: 'argola', price: 0.03 }, 
+      { name: 'jacare', price: 0.31 }, { name: 'fecho', price: 0.29 }, 
+      { name: 'trava', price: 0.11 }, { name: 'mosquetao', price: 1.06 },
     ],
     quantityRules: [
       { min: 20, max: 49, factor: 3.64 }, { min: 50, max: 99, factor: 2.03 },
