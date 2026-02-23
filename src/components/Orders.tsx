@@ -51,7 +51,7 @@ const getStatusConfig = (status: OrderStatus) => {
 export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('todos');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamentos' | 'producao' | 'finalizados' | 'cancelados'>('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [selectedClient, setSelectedClient] = useState('');
@@ -74,7 +74,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
   const [finishings, setFinishings] = useState<FinishingsMap>(createInitialFinishingsState(100));
   
-  // Limpar seleções quando a quantidade mudar
   useEffect(() => {
     setFinishings(prev => {
         const newState = { ...prev };
@@ -352,9 +351,17 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || (order.opNumber && order.opNumber.includes(searchTerm));
     let matchesStatus = true;
-    if (statusFilter === 'producao') matchesStatus = ['impressao', 'calandra', 'finalizacao'].includes(order.status);
-    else if (statusFilter === 'finalizados') matchesStatus = ['concluido', 'entregue'].includes(order.status);
-    else if (statusFilter === 'cancelados') matchesStatus = order.status === 'cancelado';
+    
+    if (statusFilter === 'orcamentos') {
+      matchesStatus = order.status === 'orcamento';
+    } else if (statusFilter === 'producao') {
+      matchesStatus = ['aprovado', 'impressao', 'calandra', 'finalizacao'].includes(order.status);
+    } else if (statusFilter === 'finalizados') {
+      matchesStatus = ['concluido', 'entregue'].includes(order.status);
+    } else if (statusFilter === 'cancelados') {
+      matchesStatus = order.status === 'cancelado';
+    }
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -661,7 +668,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
           />
         </div>
         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
-          {(['todos', 'producao', 'finalizados', 'cancelados'] as const).map(f => (
+          {(['todos', 'orcamentos', 'producao', 'finalizados', 'cancelados'] as const).map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
