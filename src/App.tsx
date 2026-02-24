@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, Users, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2, Calculator as CalcIcon, BarChart3 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { Dashboard } from './components/Dashboard';
@@ -9,6 +9,7 @@ import { Clients } from './components/Clients';
 import { Reports } from './components/Reports';
 import Calculator from './components/Calculator';
 import ConfirmModal from './components/ConfirmModal';
+import ScrollToTop from './components/ScrollToTop';
 import { PricingConfig, Order, Client, InventoryItem } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
@@ -144,6 +145,7 @@ const MainApp: React.FC = () => {
   const { user, signOut } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -453,6 +455,8 @@ const MainApp: React.FC = () => {
         onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
       />
 
+      <ScrollToTop containerRef={scrollContainerRef} />
+
       {isSidebarOpen && <div className="fixed inset-0 bg-black/60 z-20 lg:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-200 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="h-full flex flex-col">
@@ -493,7 +497,7 @@ const MainApp: React.FC = () => {
             <button className="relative p-2 text-slate-400 hover:text-white"><Bell className="w-5 h-5" /><span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-slate-900"></span></button>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-4 lg:p-8">
+        <div ref={scrollContainerRef} className="flex-1 overflow-auto p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">{renderView()}</div>
         </div>
       </main>
