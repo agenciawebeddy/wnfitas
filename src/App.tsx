@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LayoutDashboard, Users, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2, Calculator as CalcIcon, BarChart3 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { Dashboard } from './components/Dashboard';
@@ -192,6 +192,14 @@ const MainApp: React.FC = () => {
     opNumber: o.op_number,
     totalValue: o.total_value
   });
+
+  // Cálculo dinâmico de clientes com contagem de pedidos
+  const clientsWithOrderCounts = useMemo(() => {
+    return clients.map(client => ({
+      ...client,
+      totalOrders: orders.filter(order => order.clientId === client.id).length
+    }));
+  }, [clients, orders]);
 
   useEffect(() => {
     if (!user) return;
@@ -431,7 +439,7 @@ const MainApp: React.FC = () => {
       case 'orders': return <Orders onNavigate={setCurrentView} pricingConfig={pricingConfig} orders={orders} clients={clients} inventory={inventory} onAddOrder={handleAddOrder} onUpdateOrder={handleUpdateOrder} onDeleteOrder={handleDeleteOrder} />;
       case 'production': return <Production orders={orders} />;
       case 'inventory': return <Inventory items={inventory} onUpdateStock={handleUpdateStock} onAddItem={handleAddItem} onDeleteItem={handleDeleteItem} />;
-      case 'clients': return <Clients clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />;
+      case 'clients': return <Clients clients={clientsWithOrderCounts} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />;
       case 'reports': return <Reports orders={orders} clients={clients} inventory={inventory} />;
       case 'settings': return <Settings pricing={pricingConfig} onSave={handleSavePricing} />;
       case 'calculator': return <Calculator pricingConfig={pricingConfig} />;
