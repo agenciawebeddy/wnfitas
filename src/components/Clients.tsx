@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Users, Mail, Phone, Building, Save, X, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Users, Mail, Phone, Building, Save, X, Pencil, Trash2, LayoutGrid, List } from 'lucide-react';
 import { Client } from '../types';
 
 interface ClientsProps {
@@ -11,6 +11,7 @@ interface ClientsProps {
 
 export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdateClient, onDeleteClient }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
+  const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -35,7 +36,6 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
       return;
     }
 
-    // Criamos um objeto parcial para o cadastro, o ID será gerado pelo banco
     const clientData: any = {
       name,
       cnpj,
@@ -164,15 +164,33 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
            <h2 className="text-3xl font-bold tracking-tight text-slate-100">Clientes</h2>
            <p className="text-slate-400">Gerencie sua base de clientes e contatos.</p>
         </div>
-        <button 
-          onClick={() => {
-            resetForm();
-            setViewMode('new');
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all"
-        >
-          <Plus className="w-5 h-5" /> Novo Cliente
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex">
+            <button 
+              onClick={() => setDisplayMode('grid')}
+              className={`p-2 rounded-md transition-all ${displayMode === 'grid' ? 'bg-slate-800 text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+              title="Visualização em Grid"
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setDisplayMode('table')}
+              className={`p-2 rounded-md transition-all ${displayMode === 'table' ? 'bg-slate-800 text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+              title="Visualização em Lista"
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+          <button 
+            onClick={() => {
+              resetForm();
+              setViewMode('new');
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all"
+          >
+            <Plus className="w-5 h-5" /> Novo Cliente
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-4 mb-6">
@@ -188,54 +206,106 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredClients.map((client) => (
-          <div key={client.id} className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group relative">
-            <div className="absolute top-4 right-4 flex gap-2">
-               <button 
-                  onClick={() => handleEdit(client)}
-                  className="p-1.5 hover:bg-blue-900/30 rounded text-slate-500 hover:text-blue-400 transition" 
-                  title="Editar"
-               >
-                  <Pencil className="w-4 h-4" />
-               </button>
-               <button 
-                  onClick={() => onDeleteClient(client.id)}
-                  className="p-1.5 hover:bg-red-900/30 rounded text-slate-500 hover:text-red-400 transition" 
-                  title="Excluir"
-               >
-                  <Trash2 className="w-4 h-4" />
-               </button>
-            </div>
+      {displayMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredClients.map((client) => (
+            <div key={client.id} className="bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors group relative">
+              <div className="absolute top-4 right-4 flex gap-2">
+                 <button 
+                    onClick={() => handleEdit(client)}
+                    className="p-1.5 hover:bg-blue-900/30 rounded text-slate-500 hover:text-blue-400 transition" 
+                    title="Editar"
+                 >
+                    <Pencil className="w-4 h-4" />
+                 </button>
+                 <button 
+                    onClick={() => onDeleteClient(client.id)}
+                    className="p-1.5 hover:bg-red-900/30 rounded text-slate-500 hover:text-red-400 transition" 
+                    title="Excluir"
+                 >
+                    <Trash2 className="w-4 h-4" />
+                 </button>
+              </div>
 
-            <div className="flex items-start justify-between mb-4 pr-16">
-              <div className="p-3 bg-slate-800 rounded-lg text-blue-500">
-                <Users className="w-6 h-6" />
+              <div className="flex items-start justify-between mb-4 pr-16">
+                <div className="p-3 bg-slate-800 rounded-lg text-blue-500">
+                  <Users className="w-6 h-6" />
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-bold text-slate-100 mb-1 pr-4">{client.name}</h3>
+              <p className="text-sm text-slate-500 font-mono mb-4">{client.cnpj}</p>
+              
+              <div className="space-y-2 border-t border-slate-800 pt-4">
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <Phone className="w-4 h-4 text-slate-600" />
+                  {client.phone || '---'}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <Mail className="w-4 h-4 text-slate-600" />
+                  {client.email || '---'}
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-3 flex items-center justify-between">
+                <span className="text-xs font-medium bg-slate-800 text-slate-400 px-2 py-1 rounded">
+                  {client.totalOrders} Pedidos
+                </span>
               </div>
             </div>
-            
-            <h3 className="text-lg font-bold text-slate-100 mb-1 pr-4">{client.name}</h3>
-            <p className="text-sm text-slate-500 font-mono mb-4">{client.cnpj}</p>
-            
-            <div className="space-y-2 border-t border-slate-800 pt-4">
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Phone className="w-4 h-4 text-slate-600" />
-                {client.phone || '---'}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Mail className="w-4 h-4 text-slate-600" />
-                {client.email || '---'}
-              </div>
-            </div>
-            
-            <div className="mt-4 pt-3 flex items-center justify-between">
-              <span className="text-xs font-medium bg-slate-800 text-slate-400 px-2 py-1 rounded">
-                {client.totalOrders} Pedidos
-              </span>
-            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
+                <tr>
+                  <th className="px-6 py-4">Cliente / CNPJ</th>
+                  <th className="px-6 py-4">Contato</th>
+                  <th className="px-6 py-4">Pedidos</th>
+                  <th className="px-6 py-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {filteredClients.map(client => (
+                  <tr key={client.id} className="hover:bg-slate-800/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-200">{client.name}</p>
+                      <p className="text-xs text-slate-500 font-mono">{client.cnpj}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-300">{client.phone || '---'}</div>
+                      <div className="text-xs text-slate-500">{client.email || '---'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-medium bg-slate-800 text-slate-400 px-2 py-1 rounded">
+                        {client.totalOrders}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => handleEdit(client)}
+                          className="p-2 hover:bg-blue-900/30 rounded text-slate-500 hover:text-blue-400 transition"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => onDeleteClient(client.id)}
+                          className="p-2 hover:bg-red-900/30 rounded text-slate-500 hover:text-red-400 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
