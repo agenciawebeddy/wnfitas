@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Tag } from 'lucide-react';
+import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
 import { jsPDF } from 'jspdf';
@@ -249,13 +249,15 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     });
 
     const client = clients.find(c => c.id === selectedClient);
+    const totalSaleRaw = unitPrice * quantity;
+    const finalTotal = totalSaleRaw * (1 - discount / 100);
 
     const orderData: any = {
       clientId: selectedClient,
       clientName: client?.name || 'Cliente',
       deadline: deadline || new Date().toISOString().split('T')[0],
       status: finalStatus,
-      totalValue: (unitPrice * quantity) - discount,
+      totalValue: finalTotal,
       discount: discount,
       calculation: calc,
       items: [{ productType, width, quantity, unitPrice, colorBase: 'Branco', finishings: activeFinishings }]
@@ -388,7 +390,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
   if (viewMode === 'new') {
     const totalSaleRaw = unitPrice * quantity;
-    const totalSale = totalSaleRaw - discount;
+    const totalSale = totalSaleRaw * (1 - discount / 100);
     const margin = totalSale > 0 ? ((totalSale - calc.estimatedCost) / totalSale) * 100 : 0;
 
     return (
@@ -633,17 +635,22 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                 </div>
                 
                 <div className="pt-2">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Desconto Especial (R$)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Desconto Especial (%)</label>
                   <div className="relative">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-3.5 h-3.5" />
+                    <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-3.5 h-3.5" />
                     <input 
                       type="number" 
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-emerald-400 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-sm"
-                      placeholder="0,00"
+                      placeholder="0"
                       value={discount}
                       onChange={e => setDiscount(Number(e.target.value))}
                     />
                   </div>
+                  {discount > 0 && (
+                    <p className="text-[10px] text-emerald-500 mt-1">
+                      Abatimento de R$ {formatCurrency(totalSaleRaw * (discount / 100))}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-between text-sm pt-2 border-t border-slate-800/50">
@@ -720,6 +727,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       <div className="grid gap-4">
         {filteredOrders.map(order => {
           const status = getStatusConfig(order.status);
+          const originalTotal = order.items[0].unitPrice * order.items[0].quantity;
           return (
             <div key={order.id} className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700 transition-colors group">
               <div className="flex items-center gap-4">
@@ -744,7 +752,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                   <div className="flex flex-col items-end">
                     <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
                     {order.discount && order.discount > 0 && (
-                      <span className="text-[10px] text-emerald-500/70 font-medium">Desc: -R$ {formatCurrency(order.discount)}</span>
+                      <span className="text-[10px] text-emerald-500/70 font-medium">Desc: {order.discount}% (-R$ {formatCurrency(originalTotal * (order.discount / 100))})</span>
                     )}
                   </div>
                 </div>
