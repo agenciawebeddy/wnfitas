@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent, MessageSquare, Palette } from 'lucide-react';
+import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent, MessageSquare, Palette, LayoutGrid, List } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
 import { jsPDF } from 'jspdf';
@@ -50,6 +50,7 @@ const getStatusConfig = (status: OrderStatus) => {
 
 export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
+  const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'producao' | 'concluido' | 'cancelado'>('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -757,15 +758,33 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
           <h2 className="text-3xl font-bold text-slate-100">Pedidos</h2>
           <p className="text-slate-400">Gerencie orçamentos e ordens de produção.</p>
         </div>
-        <button 
-          onClick={() => {
-            resetForm();
-            setViewMode('new');
-          }} 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 font-bold shadow-lg shadow-blue-900/20 transition-all"
-        >
-          <Plus className="w-5 h-5" /> Novo Pedido
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex">
+            <button 
+              onClick={() => setDisplayMode('grid')}
+              className={`p-2 rounded-md transition-all ${displayMode === 'grid' ? 'bg-slate-800 text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+              title="Visualização em Cards"
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setDisplayMode('table')}
+              className={`p-2 rounded-md transition-all ${displayMode === 'table' ? 'bg-slate-800 text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+              title="Visualização em Tabela"
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+          <button 
+            onClick={() => {
+              resetForm();
+              setViewMode('new');
+            }} 
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 font-bold shadow-lg shadow-blue-900/20 transition-all"
+          >
+            <Plus className="w-5 h-5" /> Novo Pedido
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -792,66 +811,125 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {filteredOrders.map(order => {
-          const status = getStatusConfig(order.status);
-          const originalTotal = order.items[0].unitPrice * order.items[0].quantity;
-          return (
-            <div key={order.id} className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700 transition-colors group">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-950 rounded-lg flex items-center justify-center text-blue-500 border border-slate-800">
-                  <ShoppingCart className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">OP #{order.opNumber}</span>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${status.color}`}>{status.label}</span>
+      {displayMode === 'grid' ? (
+        <div className="grid gap-4">
+          {filteredOrders.map(order => {
+            const status = getStatusConfig(order.status);
+            const originalTotal = order.items[0].unitPrice * order.items[0].quantity;
+            return (
+              <div key={order.id} className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-slate-950 rounded-lg flex items-center justify-center text-blue-500 border border-slate-800">
+                    <ShoppingCart className="w-6 h-6" />
                   </div>
-                  <p className="font-bold text-slate-100 text-lg">{order.clientName}</p>
-                  <p className="text-xs text-slate-500">
-                    {order.items[0].productType === 'tirante' ? 'Tirante' : order.items[0].productType === 'tirante_copo' ? 'Tirante Copo' : order.items[0].productType === 'chaveiro' ? 'Chaveiro' : 'Pulseira'} • {order.items[0].quantity} un • {order.items[0].width}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-slate-800 pt-4 md:pt-0">
-                <div className="text-right">
-                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Total</p>
-                  <div className="flex flex-col items-end">
-                    <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
-                    {order.discount && order.discount > 0 && (
-                      <span className="text-[10px] text-emerald-500/70 font-medium">Desc: {order.discount}% (-R$ {formatCurrency(originalTotal * (order.discount / 100))})</span>
-                    )}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">OP #{order.opNumber}</span>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${status.color}`}>{status.label}</span>
+                    </div>
+                    <p className="font-bold text-slate-100 text-lg">{order.clientName}</p>
+                    <p className="text-xs text-slate-500">
+                      {order.items[0].productType === 'tirante' ? 'Tirante' : order.items[0].productType === 'tirante_copo' ? 'Tirante Copo' : order.items[0].productType === 'chaveiro' ? 'Chaveiro' : 'Pulseira'} • {order.items[0].quantity} un • {order.items[0].width}
+                    </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => downloadProductionSheet(order)}
-                    className="p-2.5 bg-slate-800 hover:bg-emerald-900/30 text-slate-400 hover:text-emerald-400 rounded-lg transition-all"
-                    title="Baixar Ficha de Produção"
-                  >
-                    <Download className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => handleEdit(order)} 
-                    className="p-2.5 bg-slate-800 hover:bg-blue-900/30 text-slate-400 hover:text-blue-400 rounded-lg transition-all"
-                    title="Editar Pedido"
-                  >
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => onDeleteOrder(order.id)} 
-                    className="p-2.5 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition-all"
-                    title="Excluir Pedido"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                
+                <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-slate-800 pt-4 md:pt-0">
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Total</p>
+                    <div className="flex flex-col items-end">
+                      <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
+                      {order.discount && order.discount > 0 && (
+                        <span className="text-[10px] text-emerald-500/70 font-medium">Desc: {order.discount}% (-R$ {formatCurrency(originalTotal * (order.discount / 100))})</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => downloadProductionSheet(order)}
+                      className="p-2.5 bg-slate-800 hover:bg-emerald-900/30 text-slate-400 hover:text-emerald-400 rounded-lg transition-all"
+                      title="Baixar Ficha de Produção"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => handleEdit(order)} 
+                      className="p-2.5 bg-slate-800 hover:bg-blue-900/30 text-slate-400 hover:text-blue-400 rounded-lg transition-all"
+                      title="Editar Pedido"
+                    >
+                      <Pencil className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => onDeleteOrder(order.id)} 
+                      className="p-2.5 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition-all"
+                      title="Excluir Pedido"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
+                <tr>
+                  <th className="px-6 py-4">OP / Status</th>
+                  <th className="px-6 py-4">Cliente</th>
+                  <th className="px-6 py-4">Produto / Qtd</th>
+                  <th className="px-6 py-4">Prazo</th>
+                  <th className="px-6 py-4 text-right">Valor Total</th>
+                  <th className="px-6 py-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {filteredOrders.map(order => {
+                  const status = getStatusConfig(order.status);
+                  return (
+                    <tr key={order.id} className="hover:bg-slate-800/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <p className="font-mono text-blue-400 text-sm mb-1">#{order.opNumber}</p>
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${status.color}`}>{status.label}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-200">{order.clientName}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-slate-300">{order.items[0].productType.toUpperCase()} • {order.items[0].width}</p>
+                        <p className="text-xs text-slate-500">{order.items[0].quantity} unidades</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-slate-300">{new Date(order.deadline).toLocaleDateString('pt-BR')}</p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <p className="font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
+                        {order.discount && order.discount > 0 && <p className="text-[10px] text-emerald-500/70">-{order.discount}%</p>}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => downloadProductionSheet(order)} className="p-2 hover:bg-emerald-900/30 rounded text-slate-500 hover:text-emerald-400 transition" title="Ficha">
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleEdit(order)} className="p-2 hover:bg-blue-900/30 rounded text-slate-500 hover:text-blue-400 transition" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => onDeleteOrder(order.id)} className="p-2 hover:bg-red-900/30 rounded text-slate-500 hover:text-red-400 transition" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
