@@ -33,7 +33,8 @@ export const MOCK_ORDERS: Order[] = [
         quantity: 500, 
         unitPrice: 3.00, 
         colorBase: 'Branco', 
-        finishings: [{ type: 'mosquetao', quantity: 1 }] 
+        finishings: [{ type: 'mosquetao', quantity: 1 }],
+        backType: 'mesma_arte'
       }
     ],
     calculation: {
@@ -62,7 +63,8 @@ export const MOCK_ORDERS: Order[] = [
         quantity: 1000, 
         unitPrice: 3.20, 
         colorBase: 'Branco', 
-        finishings: [{ type: 'trava', quantity: 1 }, { type: 'mosquetao', quantity: 1 }]
+        finishings: [{ type: 'trava', quantity: 1 }, { type: 'mosquetao', quantity: 1 }],
+        backType: 'mesma_arte'
       }
     ],
     calculation: {
@@ -90,7 +92,8 @@ export const MOCK_ORDERS: Order[] = [
         quantity: 2000, 
         unitPrice: 2.50, 
         colorBase: 'Branco', 
-        finishings: [{ type: 'jacare', quantity: 1 }]
+        finishings: [{ type: 'jacare', quantity: 1 }],
+        backType: 'mesma_arte'
       }
     ],
     calculation: {

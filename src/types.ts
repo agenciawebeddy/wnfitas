@@ -74,6 +74,8 @@ export interface OrderItem {
   colorBase: string;
   finishings: OrderFinishing[]; 
   artUrl?: string;
+  backType: 'mesma_arte' | 'cor';
+  backColor?: string;
 }
 
 export interface ProductionCalculation {
@@ -98,6 +100,7 @@ export interface Order {
   totalValue: number;
   discount?: number;
   opNumber?: string;
+  observations?: string;
 }
 
 export interface InventoryItem {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent } from 'lucide-react';
+import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent, MessageSquare, Palette } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
 import { jsPDF } from 'jspdf';
@@ -64,6 +64,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const [appliedFactor, setAppliedFactor] = useState(1);
   const [priceBreakdown, setPriceBreakdown] = useState({ tape: 0, finishings: 0 });
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>('orcamento');
+  const [observations, setObservations] = useState('');
+  const [backType, setBackType] = useState<'mesma_arte' | 'cor'>('mesma_arte');
+  const [backColor, setBackColor] = useState('');
 
   const createInitialFinishingsState = (orderQty: number) => {
     const state: FinishingsMap = {};
@@ -203,6 +206,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setDeadline('');
     setDiscount(0);
     setCurrentStatus('orcamento');
+    setObservations('');
+    setBackType('mesma_arte');
+    setBackColor('');
     setFinishings(createInitialFinishingsState(100));
   };
 
@@ -212,10 +218,13 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setDeadline(order.deadline);
     setCurrentStatus(order.status);
     setDiscount(order.discount || 0);
+    setObservations(order.observations || '');
     const item = order.items[0];
     setProductType(item.productType || 'tirante');
     setWidth(item.width);
     setQuantity(item.quantity);
+    setBackType(item.backType || 'mesma_arte');
+    setBackColor(item.backColor || '');
     const newFinishingsState = createInitialFinishingsState(item.quantity);
     Object.keys(newFinishingsState).forEach(k => {
       newFinishingsState[k] = { selected: false, quantity: item.quantity };
@@ -260,7 +269,17 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       totalValue: finalTotal,
       discount: discount,
       calculation: calc,
-      items: [{ productType, width, quantity, unitPrice, colorBase: 'Branco', finishings: activeFinishings }]
+      observations: observations,
+      items: [{ 
+        productType, 
+        width, 
+        quantity, 
+        unitPrice, 
+        colorBase: 'Branco', 
+        finishings: activeFinishings,
+        backType,
+        backColor: backType === 'cor' ? backColor : undefined
+      }]
     };
 
     if (editingId) {
@@ -306,12 +325,12 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     doc.text('DETALHES DO PRODUTO', 14, 75);
     autoTable(doc, {
       startY: 80,
-      head: [['Produto', 'Largura', 'Quantidade', 'Cor Base']],
+      head: [['Produto', 'Largura', 'Quantidade', 'Verso']],
       body: [[
         item.productType.toUpperCase(),
         item.width,
         `${item.quantity} un`,
-        item.colorBase
+        item.backType === 'mesma_arte' ? 'MESMA ARTE' : `COR: ${item.backColor || 'N/A'}`
       ]],
       theme: 'grid',
       headStyles: { fillColor: [37, 99, 235] }
@@ -352,7 +371,15 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text('Observações:', 14, finalY + 10);
-    doc.rect(14, finalY + 15, 182, 30);
+    
+    // Render observations if they exist
+    if (order.observations) {
+      const splitObs = doc.splitTextToSize(order.observations, 180);
+      doc.text(splitObs, 14, finalY + 18);
+      doc.rect(14, finalY + 15, 182, 30);
+    } else {
+      doc.rect(14, finalY + 15, 182, 30);
+    }
     
     doc.text('Assinatura Responsável:', 14, finalY + 60);
     doc.line(14, finalY + 65, 80, finalY + 65);
@@ -489,6 +516,35 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Verso da Fita</label>
+                    <div className="relative">
+                      <Palette className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                      <select 
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                        value={backType}
+                        onChange={e => setBackType(e.target.value as any)}
+                      >
+                        <option value="mesma_arte">Mesma Arte</option>
+                        <option value="cor">Cor Personalizada</option>
+                      </select>
+                    </div>
+                  </div>
+                  {backType === 'cor' && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Nome da Cor</label>
+                      <input 
+                        type="text" 
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Ex: Azul Royal, Preto..."
+                        value={backColor}
+                        onChange={e => setBackColor(e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Quantidade Total (Unidades)</label>
                     <input 
                       type="number" 
@@ -507,6 +563,18 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5 flex items-center gap-2">
+                    <MessageSquare className="w-3.5 h-3.5" /> Observações do Pedido
+                  </label>
+                  <textarea 
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px] resize-none"
+                    placeholder="Instruções especiais para produção ou acabamento..."
+                    value={observations}
+                    onChange={e => setObservations(e.target.value)}
+                  />
                 </div>
               </div>
 
