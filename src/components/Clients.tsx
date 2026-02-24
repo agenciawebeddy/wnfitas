@@ -11,7 +11,7 @@ interface ClientsProps {
 
 export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdateClient, onDeleteClient }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
-  const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
+  const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 

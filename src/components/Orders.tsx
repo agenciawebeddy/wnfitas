@@ -50,7 +50,7 @@ const getStatusConfig = (status: OrderStatus) => {
 
 export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, orders, clients, inventory, onAddOrder, onUpdateOrder, onDeleteOrder }) => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
-  const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('grid');
+  const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'producao' | 'concluido' | 'cancelado'>('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
