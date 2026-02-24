@@ -9,6 +9,7 @@ import { Clients } from './components/Clients';
 import { Reports } from './components/Reports';
 import Calculator from './components/Calculator';
 import ConfirmModal from './components/ConfirmModal';
+import StockAlertModal from './components/StockAlertModal';
 import ScrollToTop from './components/ScrollToTop';
 import { PricingConfig, Order, Client, InventoryItem } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -183,6 +184,14 @@ const MainApp: React.FC = () => {
     title: '',
     message: '',
     onConfirm: () => {},
+  });
+
+  const [stockAlertModal, setStockAlertModal] = useState<{
+    isOpen: boolean;
+    items: InventoryItem[];
+  }>({
+    isOpen: false,
+    items: [],
   });
 
   const mapOrder = (o: any): Order => ({
@@ -375,15 +384,24 @@ const MainApp: React.FC = () => {
         deductions.push({ item: stockItem, qty: f.quantity });
       });
 
+      const criticalItemsFound: InventoryItem[] = [];
+
       for (const d of deductions) {
         if (d.item) {
           const newQty = Math.max(0, d.item.quantity - d.qty);
           await supabase.from('inventory').update({ quantity: newQty }).eq('id', d.item.id);
           
           if (newQty <= d.item.minStock) {
-            toast(`Estoque crítico: ${d.item.name}`, { icon: '⚠️', duration: 5000 });
+            criticalItemsFound.push({ ...d.item, quantity: newQty });
           }
         }
+      }
+
+      if (criticalItemsFound.length > 0) {
+        setStockAlertModal({
+          isOpen: true,
+          items: criticalItemsFound
+        });
       }
 
       const { data: updatedInventory } = await supabase.from('inventory').select('*').order('name');
@@ -461,6 +479,12 @@ const MainApp: React.FC = () => {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      <StockAlertModal 
+        isOpen={stockAlertModal.isOpen}
+        items={stockAlertModal.items}
+        onClose={() => setStockAlertModal(prev => ({ ...prev, isOpen: false }))}
       />
 
       <ScrollToTop containerRef={scrollContainerRef} />
