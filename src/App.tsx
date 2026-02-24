@@ -93,6 +93,10 @@ const Inventory: React.FC<{
                 <input type="text" value={newUnit} onChange={e => setNewUnit(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200" />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Estoque Mínimo (Alerta)</label>
+              <input type="number" value={newMinStock} onChange={e => setNewMinStock(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
             <button onClick={handleSaveItem} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium">Cadastrar Item</button>
           </div>
         </div>
@@ -112,24 +116,50 @@ const Inventory: React.FC<{
         </button>
       </div>
       <div className="grid gap-4">
-        {items.map(item => (
-          <div key={item.id} className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex items-center justify-between group">
-            <div>
-              <p className="font-bold text-slate-100 text-lg">{item.name}</p>
-              <p className="text-sm text-slate-500 capitalize">{item.category}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-2xl font-bold text-emerald-400">{formatQty(item)} <span className="text-sm font-normal text-slate-500">{item.unit}</span></p>
+        {items.map(item => {
+          const isLowStock = item.quantity <= item.minStock;
+          return (
+            <div key={item.id} className={`bg-slate-900 border ${isLowStock ? 'border-red-900/50' : 'border-slate-800'} p-5 rounded-xl flex items-center justify-between group transition-colors`}>
+              <div>
+                <p className="font-bold text-slate-100 text-lg">{item.name}</p>
+                <p className="text-sm text-slate-500 capitalize">{item.category}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="text" className="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm" value={stockInputs[item.id] || ''} onChange={e => handleInputChange(item.id, e.target.value)} placeholder="0,00" />
-                <button onClick={() => handleSubmit(item.id)} className="bg-blue-600 p-1.5 rounded"><Plus className="w-4 h-4" /></button>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className={`text-2xl font-bold ${isLowStock ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {formatQty(item)} <span className="text-sm font-normal text-slate-500">{item.unit}</span>
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Mínimo: {item.minStock} {item.unit}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    className="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-slate-200 focus:border-blue-500 outline-none" 
+                    value={stockInputs[item.id] || ''} 
+                    onChange={e => handleInputChange(item.id, e.target.value)} 
+                    placeholder="0,00" 
+                  />
+                  <button 
+                    onClick={() => handleSubmit(item.id)} 
+                    className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded transition-colors"
+                    title="Adicionar ao estoque"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <button 
+                  onClick={() => onDeleteItem(item.id)} 
+                  className="text-slate-600 hover:text-red-400 p-1 transition-colors"
+                  title="Excluir item"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
               </div>
-              <button onClick={() => onDeleteItem(item.id)} className="text-slate-600 hover:text-red-400"><Trash2 className="w-5 h-5" /></button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
