@@ -181,6 +181,7 @@ const MainApp: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [userProfile, setUserProfile] = useState<{ first_name: string; last_name: string } | null>(null);
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>({
     prices: {
       tirante: { '15mm': 1.10, '20mm': 2.10, '25mm': 2.80 },
@@ -244,6 +245,10 @@ const MainApp: React.FC = () => {
     if (!user) return;
 
     const fetchData = async () => {
+      // Buscar Perfil do Usuário
+      const { data: profileData } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single();
+      if (profileData) setUserProfile(profileData);
+
       const { data: clientsData } = await supabase.from('clients').select('*').order('name');
       if (clientsData) {
         setClients(clientsData.map((c: any) => ({ ...c, totalOrders: 0 })));
@@ -495,6 +500,14 @@ const MainApp: React.FC = () => {
     }
   };
 
+  const displayName = useMemo(() => {
+    if (userProfile?.first_name) {
+      return `${userProfile.first_name} ${userProfile.last_name || ''}`.trim();
+    }
+    const emailPrefix = user?.email?.split('@')[0] || 'Usuário';
+    return emailPrefix.replace(/\./g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }, [userProfile, user]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 font-sans flex overflow-hidden">
       <Toaster position="top-right" toastOptions={{
@@ -539,10 +552,10 @@ const MainApp: React.FC = () => {
             <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50">
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shrink-0">
-                  {user?.email?.[0].toUpperCase()}
+                  {displayName[0]}
                 </div>
                 <div className="overflow-hidden">
-                  <p className="text-sm font-medium text-white truncate">{user?.email?.split('@')[0]}</p>
+                  <p className="text-sm font-medium text-white truncate">{displayName}</p>
                 </div>
               </div>
               <button onClick={() => signOut()} className="text-slate-400 hover:text-red-400 p-1" title="Sair">
