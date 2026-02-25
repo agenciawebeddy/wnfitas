@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Save, DollarSign, Settings as SettingsIcon, Link as LinkIcon, BarChart3, Trash2, Plus, Percent, Clock, Printer, Flame, UserPlus, Mail, Lock, User, Pencil, Shield } from 'lucide-react';
 import { PricingConfig, QuantityRule, FinishingItem, ProductType, LanyardWidth } from '../types';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { toast } from 'react-hot-toast';
 
 interface SettingsProps {
@@ -195,7 +196,18 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
     }
 
     setIsRegistering(true);
-    const { error } = await supabase.auth.signUp({
+
+    // Criamos um cliente temporário que NÃO salva a sessão no localStorage
+    // Isso evita que o admin seja deslogado ao criar um novo usuário
+    const tempClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+
+    const { error } = await tempClient.auth.signUp({
       email: newUser.email,
       password: newUser.password,
       options: {
@@ -212,7 +224,7 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
     if (error) {
       toast.error('Erro ao cadastrar: ' + error.message);
     } else {
-      toast.success('Usuário cadastrado!');
+      toast.success('Operador cadastrado com sucesso!');
       setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'operador' });
       fetchUsers();
     }
@@ -558,7 +570,7 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
-                      {users.map(u => (
+                      {users.length > 0 ? users.map(u => (
                         <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
                           <td className="px-4 py-3">
                             {editingUser?.id === u.id ? (
@@ -612,7 +624,13 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      )) : (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-8 text-center text-slate-500 text-xs">
+                            Nenhum usuário visível. Verifique as permissões RLS.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
