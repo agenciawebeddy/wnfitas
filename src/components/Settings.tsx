@@ -1,21 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Save, DollarSign, Settings as SettingsIcon, Link as LinkIcon, BarChart3, Trash2, Plus, Percent, Clock, Printer, Flame, UserPlus, Mail, Lock, User, Pencil, Shield } from 'lucide-react';
+import { Save, DollarSign, Settings as SettingsIcon, Link as LinkIcon, BarChart3, Trash2, Plus, Percent, Clock, Printer, Flame } from 'lucide-react';
 import { PricingConfig, QuantityRule, FinishingItem, ProductType, LanyardWidth } from '../types';
-import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../integrations/supabase/client';
-import { createClient } from '@supabase/supabase-js';
-import { toast } from 'react-hot-toast';
 
 interface SettingsProps {
   pricing: PricingConfig;
   onSave: (newPricing: PricingConfig) => void;
-}
-
-interface UserProfile {
-  id: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  email?: string;
 }
 
 const PriceInput = ({ value, onChange, className }: { value: number, onChange: (val: number) => void, className?: string }) => {
@@ -64,38 +53,12 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
   });
   const [saved, setSaved] = useState(false);
 
-  // User Management State
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [newUser, setNewUser] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    role: 'operador'
-  });
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
-
   useEffect(() => {
     setValues({
       ...pricing,
       finishings: [...pricing.finishings].sort((a, b) => a.name.localeCompare(b.name))
     });
-    fetchUsers();
   }, [pricing]);
-
-  const fetchUsers = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('first_name');
-    
-    if (error) {
-      console.error('Erro ao buscar usuários:', error);
-    } else {
-      setUsers(data || []);
-    }
-  };
 
   const formatDisplay = (val: number) => String(val).replace('.', ',');
 
@@ -186,85 +149,6 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
     setValues(finalConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
-  };
-
-  const handleRegisterUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUser.email || !newUser.password || !newUser.firstName) {
-      toast.error('Preencha os campos obrigatórios');
-      return;
-    }
-
-    setIsRegistering(true);
-
-    // Criamos um cliente temporário que NÃO salva a sessão no localStorage
-    // Isso evita que o admin seja deslogado ao criar um novo usuário
-    const tempClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-      }
-    });
-
-    const { error } = await tempClient.auth.signUp({
-      email: newUser.email,
-      password: newUser.password,
-      options: {
-        data: {
-          first_name: newUser.firstName,
-          last_name: newUser.lastName,
-          role: newUser.role
-        }
-      }
-    });
-
-    setIsRegistering(false);
-
-    if (error) {
-      toast.error('Erro ao cadastrar: ' + error.message);
-    } else {
-      toast.success('Operador cadastrado com sucesso!');
-      setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'operador' });
-      fetchUsers();
-    }
-  };
-
-  const handleUpdateUser = async () => {
-    if (!editingUser) return;
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        first_name: editingUser.first_name,
-        last_name: editingUser.last_name,
-        role: editingUser.role
-      })
-      .eq('id', editingUser.id);
-
-    if (error) {
-      toast.error('Erro ao atualizar usuário');
-    } else {
-      toast.success('Usuário atualizado');
-      setEditingUser(null);
-      fetchUsers();
-    }
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm('Tem certeza que deseja remover este usuário?')) return;
-
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast.error('Erro ao remover usuário');
-    } else {
-      toast.success('Usuário removido');
-      fetchUsers();
-    }
   };
 
   const renderPriceSection = (type: ProductType, title: string, subtitle: string) => (
@@ -546,177 +430,6 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                           Estes parâmetros são usados para calcular o <strong>Tempo Estimado</strong> na tela de Pedidos.
                       </p>
                   </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-800">
-              <UserPlus className="w-5 h-5 text-blue-500" />
-              <h3 className="text-lg font-medium text-slate-100">Gestão de Usuários</h3>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Lista de Usuários */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Usuários Cadastrados</h4>
-                <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-900 text-slate-400 text-[10px] uppercase font-bold">
-                      <tr>
-                        <th className="px-4 py-2">Nome</th>
-                        <th className="px-4 py-2">Cargo</th>
-                        <th className="px-4 py-2 text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800">
-                      {users.length > 0 ? users.map(u => (
-                        <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
-                          <td className="px-4 py-3">
-                            {editingUser?.id === u.id ? (
-                              <div className="flex gap-2">
-                                <input 
-                                  type="text" 
-                                  value={editingUser.first_name}
-                                  onChange={e => setEditingUser({...editingUser, first_name: e.target.value})}
-                                  className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs w-24"
-                                />
-                                <input 
-                                  type="text" 
-                                  value={editingUser.last_name}
-                                  onChange={e => setEditingUser({...editingUser, last_name: e.target.value})}
-                                  className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs w-24"
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-slate-200 font-medium">{u.first_name} {u.last_name}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {editingUser?.id === u.id ? (
-                              <select 
-                                value={editingUser.role}
-                                onChange={e => setEditingUser({...editingUser, role: e.target.value})}
-                                className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs"
-                              >
-                                <option value="operador">Operador</option>
-                                <option value="admin">Admin</option>
-                              </select>
-                            ) : (
-                              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                                {u.role}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-2">
-                              {editingUser?.id === u.id ? (
-                                <>
-                                  <button onClick={handleUpdateUser} className="text-emerald-400 hover:text-emerald-300 p-1"><Save className="w-4 h-4" /></button>
-                                  <button onClick={() => setEditingUser(null)} className="text-slate-500 hover:text-slate-300 p-1">X</button>
-                                </>
-                              ) : (
-                                <>
-                                  <button onClick={() => setEditingUser(u)} className="text-slate-500 hover:text-blue-400 p-1"><Pencil className="w-4 h-4" /></button>
-                                  <button onClick={() => handleDeleteUser(u.id)} className="text-slate-500 hover:text-red-400 p-1"><Trash2 className="w-4 h-4" /></button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )) : (
-                        <tr>
-                          <td colSpan={3} className="px-4 py-8 text-center text-slate-500 text-xs">
-                            Nenhum usuário visível. Verifique as permissões RLS.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-800 pt-6">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Novo Operador</h4>
-                <form onSubmit={handleRegisterUser} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">Nome</label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                        <input 
-                          type="text" 
-                          value={newUser.firstName}
-                          onChange={e => setNewUser({...newUser, firstName: e.target.value})}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="Nome"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">Sobrenome</label>
-                      <input 
-                        type="text" 
-                        value={newUser.lastName}
-                        onChange={e => setNewUser({...newUser, lastName: e.target.value})}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Sobrenome"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">E-mail</label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                        <input 
-                          type="email" 
-                          value={newUser.email}
-                          onChange={e => setNewUser({...newUser, email: e.target.value})}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="email@exemplo.com"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-400 mb-1">Cargo</label>
-                      <div className="relative">
-                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                        <select 
-                          value={newUser.role}
-                          onChange={e => setNewUser({...newUser, role: e.target.value})}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
-                        >
-                          <option value="operador">Operador</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">Senha Inicial</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                      <input 
-                        type="password" 
-                        value={newUser.password}
-                        onChange={e => setNewUser({...newUser, password: e.target.value})}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={isRegistering}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isRegistering ? 'Cadastrando...' : <><UserPlus className="w-4 h-4" /> Cadastrar Operador</>}
-                  </button>
-                </form>
               </div>
             </div>
           </div>
