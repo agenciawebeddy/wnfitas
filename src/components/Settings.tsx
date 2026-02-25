@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Save, DollarSign, Settings as SettingsIcon, Link as LinkIcon, BarChart3, Trash2, Plus, Percent, Clock, Printer, Flame } from 'lucide-react';
+import { Save, DollarSign, Settings as SettingsIcon, Link as LinkIcon, BarChart3, Trash2, Plus, Percent, Clock, Printer, Flame, UserPlus, Mail, Lock, User } from 'lucide-react';
 import { PricingConfig, QuantityRule, FinishingItem, ProductType, LanyardWidth } from '../types';
+import { supabase } from '../integrations/supabase/client';
+import { toast } from 'react-hot-toast';
 
 interface SettingsProps {
   pricing: PricingConfig;
@@ -47,12 +49,20 @@ const PriceInput = ({ value, onChange, className }: { value: number, onChange: (
 };
 
 export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
-  // Inicializa os valores ordenando os acabamentos alfabeticamente
   const [values, setValues] = useState<PricingConfig>({
     ...pricing,
     finishings: [...pricing.finishings].sort((a, b) => a.name.localeCompare(b.name))
   });
   const [saved, setSaved] = useState(false);
+
+  // User Registration State
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: ''
+  });
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     setValues({
@@ -157,7 +167,6 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
   };
 
   const handleSave = () => {
-    // Garante a ordenação antes de salvar
     const finalConfig = {
       ...values,
       finishings: [...values.finishings].sort((a, b) => a.name.localeCompare(b.name))
@@ -166,6 +175,35 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
     setValues(finalConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleRegisterUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser.email || !newUser.password || !newUser.firstName) {
+      toast.error('Preencha os campos obrigatórios');
+      return;
+    }
+
+    setIsRegistering(true);
+    const { error } = await supabase.auth.signUp({
+      email: newUser.email,
+      password: newUser.password,
+      options: {
+        data: {
+          first_name: newUser.firstName,
+          last_name: newUser.lastName
+        }
+      }
+    });
+
+    setIsRegistering(false);
+
+    if (error) {
+      toast.error('Erro ao cadastrar: ' + error.message);
+    } else {
+      toast.success('Usuário cadastrado! Verifique o e-mail se necessário.');
+      setNewUser({ email: '', password: '', firstName: '', lastName: '' });
+    }
   };
 
   const renderPriceSection = (type: ProductType, title: string, subtitle: string) => (
@@ -356,97 +394,172 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-800">
-            <SettingsIcon className="w-5 h-5 text-slate-500" />
-            <h3 className="text-lg font-medium text-slate-100">Parâmetros de Produção</h3>
+        <div className="space-y-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-800">
+              <SettingsIcon className="w-5 h-5 text-slate-500" />
+              <h3 className="text-lg font-medium text-slate-100">Parâmetros de Produção</h3>
+            </div>
+            
+            <div className="space-y-8">
+              <div>
+                 <div className="flex items-center gap-2 mb-3 text-blue-400">
+                    <Printer className="w-4 h-4" />
+                    <h4 className="font-semibold text-sm uppercase tracking-wider">Velocidade Impressão (Referência)</h4>
+                 </div>
+                 <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Distância (m)</label>
+                      <input 
+                        type="text" 
+                        inputMode="decimal"
+                        value={formatDisplay(values.productionSettings?.plotter.referenceDistanceMeters || 0)}
+                        onChange={(e) => handleProductionChange('plotter', 'referenceDistanceMeters', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Minutos</label>
+                      <input 
+                        type="number" 
+                        value={values.productionSettings?.plotter.timeMinutes || 0}
+                        onChange={(e) => handleProductionChange('plotter', 'timeMinutes', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Segundos</label>
+                      <input 
+                        type="number" 
+                        value={values.productionSettings?.plotter.timeSeconds || 0}
+                        onChange={(e) => handleProductionChange('plotter', 'timeSeconds', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      />
+                    </div>
+                 </div>
+              </div>
+
+              <div className="border-t border-slate-800"></div>
+
+              <div>
+                 <div className="flex items-center gap-2 mb-3 text-orange-400">
+                    <Flame className="w-4 h-4" />
+                    <h4 className="font-semibold text-sm uppercase tracking-wider">Velocidade Calandra (Referência)</h4>
+                 </div>
+                 <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Distância (m)</label>
+                      <input 
+                        type="text" 
+                        inputMode="decimal"
+                        value={formatDisplay(values.productionSettings?.calandra.referenceDistanceMeters || 0)}
+                        onChange={(e) => handleProductionChange('calandra', 'referenceDistanceMeters', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Minutos</label>
+                      <input 
+                        type="number" 
+                        value={values.productionSettings?.calandra.timeMinutes || 0}
+                        onChange={(e) => handleProductionChange('calandra', 'timeMinutes', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Segundos</label>
+                      <input 
+                        type="number" 
+                        value={values.productionSettings?.calandra.timeSeconds || 0}
+                        onChange={(e) => handleProductionChange('calandra', 'timeSeconds', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      />
+                    </div>
+                 </div>
+              </div>
+
+              <div className="bg-slate-800/50 p-4 rounded-lg mt-6">
+                  <div className="flex items-start gap-2">
+                      <Clock className="w-4 h-4 text-blue-400 mt-0.5" />
+                      <p className="text-xs text-slate-400">
+                          Estes parâmetros são usados para calcular o <strong>Tempo Estimado</strong> na tela de Pedidos.
+                      </p>
+                  </div>
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-8">
-            <div>
-               <div className="flex items-center gap-2 mb-3 text-blue-400">
-                  <Printer className="w-4 h-4" />
-                  <h4 className="font-semibold text-sm uppercase tracking-wider">Velocidade Impressão (Referência)</h4>
-               </div>
-               <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Distância (m)</label>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-800">
+              <UserPlus className="w-5 h-5 text-blue-500" />
+              <h3 className="text-lg font-medium text-slate-100">Gestão de Usuários</h3>
+            </div>
+            
+            <form onSubmit={handleRegisterUser} className="space-y-4">
+              <p className="text-xs text-slate-500 mb-4">Cadastre novos operadores para acessarem o sistema.</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Nome</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                     <input 
                       type="text" 
-                      inputMode="decimal"
-                      value={formatDisplay(values.productionSettings?.plotter.referenceDistanceMeters || 0)}
-                      onChange={(e) => handleProductionChange('plotter', 'referenceDistanceMeters', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
+                      value={newUser.firstName}
+                      onChange={e => setNewUser({...newUser, firstName: e.target.value})}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="Nome"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Minutos</label>
-                    <input 
-                      type="number" 
-                      value={values.productionSettings?.plotter.timeMinutes || 0}
-                      onChange={(e) => handleProductionChange('plotter', 'timeMinutes', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Segundos</label>
-                    <input 
-                      type="number" 
-                      value={values.productionSettings?.plotter.timeSeconds || 0}
-                      onChange={(e) => handleProductionChange('plotter', 'timeSeconds', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
-                    />
-                  </div>
-               </div>
-            </div>
-
-            <div className="border-t border-slate-800"></div>
-
-            <div>
-               <div className="flex items-center gap-2 mb-3 text-orange-400">
-                  <Flame className="w-4 h-4" />
-                  <h4 className="font-semibold text-sm uppercase tracking-wider">Velocidade Calandra (Referência)</h4>
-               </div>
-               <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Distância (m)</label>
-                    <input 
-                      type="text" 
-                      inputMode="decimal"
-                      value={formatDisplay(values.productionSettings?.calandra.referenceDistanceMeters || 0)}
-                      onChange={(e) => handleProductionChange('calandra', 'referenceDistanceMeters', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Minutos</label>
-                    <input 
-                      type="number" 
-                      value={values.productionSettings?.calandra.timeMinutes || 0}
-                      onChange={(e) => handleProductionChange('calandra', 'timeMinutes', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Segundos</label>
-                    <input 
-                      type="number" 
-                      value={values.productionSettings?.calandra.timeSeconds || 0}
-                      onChange={(e) => handleProductionChange('calandra', 'timeSeconds', e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200"
-                    />
-                  </div>
-               </div>
-            </div>
-
-            <div className="bg-slate-800/50 p-4 rounded-lg mt-6">
-                <div className="flex items-start gap-2">
-                    <Clock className="w-4 h-4 text-blue-400 mt-0.5" />
-                    <p className="text-xs text-slate-400">
-                        Estes parâmetros são usados para calcular o <strong>Tempo Estimado</strong> na tela de Pedidos.
-                    </p>
                 </div>
-            </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Sobrenome</label>
+                  <input 
+                    type="text" 
+                    value={newUser.lastName}
+                    onChange={e => setNewUser({...newUser, lastName: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Sobrenome"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">E-mail</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                  <input 
+                    type="email" 
+                    value={newUser.email}
+                    onChange={e => setNewUser({...newUser, email: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Senha Inicial</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                  <input 
+                    type="password" 
+                    value={newUser.password}
+                    onChange={e => setNewUser({...newUser, password: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isRegistering}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isRegistering ? 'Cadastrando...' : <><UserPlus className="w-4 h-4" /> Cadastrar Operador</>}
+              </button>
+            </form>
           </div>
         </div>
       </div>
