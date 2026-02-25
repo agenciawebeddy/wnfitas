@@ -124,7 +124,7 @@ export const Users: React.FC = () => {
   };
 
   const filteredUsers = users.filter(u => 
-    `${u.first_name} ${u.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (viewMode === 'new') {
@@ -263,13 +263,13 @@ export const Users: React.FC = () => {
                     <div className="flex gap-2">
                       <input 
                         type="text" 
-                        value={editingUser.first_name}
+                        value={editingUser.first_name || ''}
                         onChange={e => setEditingUser({...editingUser, first_name: e.target.value})}
                         className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200"
                       />
                       <input 
                         type="text" 
-                        value={editingUser.last_name}
+                        value={editingUser.last_name || ''}
                         onChange={e => setEditingUser({...editingUser, last_name: e.target.value})}
                         className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200"
                       />
@@ -277,9 +277,9 @@ export const Users: React.FC = () => {
                   ) : (
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold text-xs">
-                        {u.first_name[0]}
+                        {u.first_name ? u.first_name[0] : '?'}
                       </div>
-                      <span className="text-slate-200 font-medium">{u.first_name} {u.last_name}</span>
+                      <span className="text-slate-200 font-medium">{u.first_name || 'Sem Nome'} {u.last_name || ''}</span>
                     </div>
                   )}
                 </td>
