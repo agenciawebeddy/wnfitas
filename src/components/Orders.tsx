@@ -52,7 +52,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('table');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'producao' | 'concluido' | 'cancelado'>('todos');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'impressao' | 'calandra' | 'finalizacao' | 'concluido' | 'cancelado'>('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [selectedClient, setSelectedClient] = useState('');
@@ -392,16 +392,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     const matchesSearch = order.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || (order.opNumber && order.opNumber.includes(searchTerm));
     let matchesStatus = true;
     
-    if (statusFilter === 'orcamento') {
-      matchesStatus = order.status === 'orcamento';
-    } else if (statusFilter === 'aprovado') {
-      matchesStatus = order.status === 'aprovado';
-    } else if (statusFilter === 'producao') {
-      matchesStatus = ['impressao', 'calandra', 'finalizacao'].includes(order.status);
-    } else if (statusFilter === 'concluido') {
-      matchesStatus = ['concluido', 'entregue'].includes(order.status);
-    } else if (statusFilter === 'cancelado') {
-      matchesStatus = order.status === 'cancelado';
+    if (statusFilter !== 'todos') {
+      matchesStatus = order.status === statusFilter;
     }
     
     return matchesSearch && matchesStatus;
@@ -409,9 +401,11 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
 
   const filterLabels: Record<typeof statusFilter, string> = {
     todos: 'Todos',
-    orcamento: 'Orçamentos',
-    aprovado: 'Aprovados',
-    producao: 'Em Produção',
+    orcamento: 'Orçamento',
+    aprovado: 'Aprovado',
+    impressao: 'Impressão',
+    calandra: 'Calandra',
+    finalizacao: 'Finalização',
     concluido: 'Finalizados',
     cancelado: 'Cancelados'
   };
@@ -799,7 +793,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
           />
         </div>
         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 overflow-x-auto">
-          {(['todos', 'orcamento', 'aprovado', 'producao', 'concluido', 'cancelado'] as const).map(f => (
+          {(['todos', 'orcamento', 'aprovado', 'impressao', 'calandra', 'finalizacao', 'concluido', 'cancelado'] as const).map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
