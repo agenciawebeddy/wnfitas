@@ -52,7 +52,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [displayMode, setDisplayMode] = useState<'grid' | 'table'>('table');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'impressao' | 'calandra' | 'finalizacao' | 'concluido' | 'cancelado'>('todos');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'orcamento' | 'aprovado' | 'impressao' | 'calandra' | 'finalizacao' | 'cancelado'>('todos');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [selectedClient, setSelectedClient] = useState('');
@@ -406,7 +406,6 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     impressao: 'Impressão',
     calandra: 'Calandra',
     finalizacao: 'Finalização',
-    concluido: 'Finalizados',
     cancelado: 'Cancelados'
   };
 
@@ -793,7 +792,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
           />
         </div>
         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800 overflow-x-auto">
-          {(['todos', 'orcamento', 'aprovado', 'impressao', 'calandra', 'finalizacao', 'concluido', 'cancelado'] as const).map(f => (
+          {(['todos', 'orcamento', 'aprovado', 'impressao', 'calandra', 'finalizacao', 'cancelado'] as const).map(f => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
