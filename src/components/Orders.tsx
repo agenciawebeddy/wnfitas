@@ -38,9 +38,9 @@ const getStatusConfig = (status: OrderStatus) => {
   switch (status) {
     case 'orcamento': return { label: 'Orçamento', color: 'bg-slate-800 text-slate-400 border-slate-700' };
     case 'aprovado': return { label: 'Aprovado', color: 'bg-emerald-950 text-emerald-400 border-emerald-900' };
-    case 'impressao': return { label: 'Prod. (Plotter)', color: 'bg-blue-950 text-blue-400 border-blue-900' };
-    case 'calandra': return { label: 'Prod. (Calandra)', color: 'bg-orange-950 text-orange-400 border-orange-900' };
-    case 'finalizacao': return { label: 'Prod. (Acabam.)', color: 'bg-indigo-950 text-indigo-400 border-indigo-900' };
+    case 'impressao': return { label: 'Impressão', color: 'bg-blue-950 text-blue-400 border-blue-900' };
+    case 'calandra': return { label: 'Calandra', color: 'bg-orange-950 text-orange-400 border-orange-900' };
+    case 'finalizacao': return { label: 'Finalização', color: 'bg-indigo-950 text-indigo-400 border-indigo-900' };
     case 'concluido': return { label: 'Finalizado', color: 'bg-green-600 text-white border-green-500' };
     case 'entregue': return { label: 'Entregue', color: 'bg-slate-700 text-slate-300 border-slate-600' };
     case 'cancelado': return { label: 'Cancelado', color: 'bg-red-950 text-red-400 border-red-900' };
