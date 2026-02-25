@@ -18,6 +18,8 @@ export const Login = () => {
         <Auth
           supabaseClient={supabase}
           providers={[]}
+          view="sign_in"
+          showLinks={false}
           appearance={{
             theme: ThemeSupa,
             variables: {
@@ -45,15 +47,6 @@ export const Login = () => {
                 loading_button_label: 'Entrando...',
                 social_provider_text: 'Entrar com {{provider}}',
                 link_text: 'Já tem uma conta? Entre',
-              },
-              sign_up: {
-                email_label: 'Endereço de e-mail',
-                password_label: 'Senha',
-                email_input_placeholder: 'Seu endereço de e-mail',
-                password_input_placeholder: 'Sua senha',
-                button_label: 'Cadastrar',
-                loading_button_label: 'Cadastrando...',
-                link_text: 'Não tem uma conta? Cadastre-se',
               },
               forgotten_password: {
                 email_label: 'Endereço de e-mail',
