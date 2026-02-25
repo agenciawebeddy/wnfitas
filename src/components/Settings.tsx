@@ -47,8 +47,19 @@ const PriceInput = ({ value, onChange, className }: { value: number, onChange: (
 };
 
 export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
-  const [values, setValues] = useState<PricingConfig>(pricing);
+  // Inicializa os valores ordenando os acabamentos alfabeticamente
+  const [values, setValues] = useState<PricingConfig>({
+    ...pricing,
+    finishings: [...pricing.finishings].sort((a, b) => a.name.localeCompare(b.name))
+  });
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setValues({
+      ...pricing,
+      finishings: [...pricing.finishings].sort((a, b) => a.name.localeCompare(b.name))
+    });
+  }, [pricing]);
 
   const formatDisplay = (val: number) => String(val).replace('.', ',');
 
@@ -103,11 +114,21 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
       setSaved(false);
   };
 
-  const addFinishing = () => {
+  const sortFinishings = () => {
     setValues(prev => ({
-        ...prev,
-        finishings: [...prev.finishings, { name: 'Novo Item', price: 0 }]
+      ...prev,
+      finishings: [...prev.finishings].sort((a, b) => a.name.localeCompare(b.name))
     }));
+  };
+
+  const addFinishing = () => {
+    setValues(prev => {
+      const newFinishings = [...prev.finishings, { name: 'Novo Item', price: 0 }];
+      return {
+        ...prev,
+        finishings: newFinishings.sort((a, b) => a.name.localeCompare(b.name))
+      };
+    });
   };
 
   const removeFinishing = (index: number) => {
@@ -136,7 +157,13 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
   };
 
   const handleSave = () => {
-    onSave(values);
+    // Garante a ordenação antes de salvar
+    const finalConfig = {
+      ...values,
+      finishings: [...values.finishings].sort((a, b) => a.name.localeCompare(b.name))
+    };
+    onSave(finalConfig);
+    setValues(finalConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -211,6 +238,7 @@ export const Settings: React.FC<SettingsProps> = ({ pricing, onSave }) => {
                                         type="text" 
                                         value={item.name}
                                         onChange={(e) => handleFinishingNameChange(idx, e.target.value)}
+                                        onBlur={sortFinishings}
                                         className="w-full bg-transparent border border-slate-700 rounded px-2 py-1 text-slate-200"
                                         placeholder="Nome do item"
                                     />
