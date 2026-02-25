@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Mail, Lock, User, Pencil, Trash2, Save, Shield, Search, Users as UsersIcon } from 'lucide-react';
-import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../integrations/supabase/client';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 
 interface UserProfile {
@@ -54,35 +53,34 @@ export const Users: React.FC = () => {
 
     setIsRegistering(true);
 
-    const tempClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-      }
-    });
-
-    const { error } = await tempClient.auth.signUp({
-      email: newUser.email,
-      password: newUser.password,
-      options: {
-        data: {
-          first_name: newUser.firstName,
-          last_name: newUser.lastName,
-          role: newUser.role
+    try {
+      // Chamando a Edge Function para criar o usuário no Auth e no Profile simultaneamente
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          email: newUser.email,
+          password: newUser.password,
+          userData: {
+            first_name: newUser.firstName,
+            last_name: newUser.lastName,
+            role: newUser.role
+          }
         }
-      }
-    });
+      });
 
-    setIsRegistering(false);
+      if (error) throw error;
 
-    if (error) {
-      toast.error('Erro ao cadastrar: ' + error.message);
-    } else {
       toast.success('Operador cadastrado com sucesso!');
       setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'operador' });
       setViewMode('list');
       fetchUsers();
+    } catch (error: any) {
+      const msg = error.message?.includes('already registered') 
+        ? 'Este e-mail já está em uso no sistema.' 
+        : 'Erro ao cadastrar: ' + error.message;
+      toast.error(msg);
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -108,18 +106,22 @@ export const Users: React.FC = () => {
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!confirm('Tem certeza que deseja remover este usuário?')) return;
+    if (!confirm('Tem certeza que deseja remover este usuário permanentemente? Isso excluirá o login dele também.')) return;
 
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'delete',
+          userId: id
+        }
+      });
 
-    if (error) {
-      toast.error('Erro ao remover usuário');
-    } else {
-      toast.success('Usuário removido');
+      if (error) throw error;
+
+      toast.success('Usuário removido permanentemente');
       fetchUsers();
+    } catch (error: any) {
+      toast.error('Erro ao remover usuário: ' + error.message);
     }
   };
 
