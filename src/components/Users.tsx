@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Mail, Lock, User, Pencil, Trash2, Save, Shield, Search, Users as UsersIcon } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Pencil, Trash2, Save, Shield, Search, RefreshCw } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 
@@ -26,12 +26,14 @@ export const Users: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -39,9 +41,11 @@ export const Users: React.FC = () => {
     
     if (error) {
       console.error('Erro ao buscar usuários:', error);
+      toast.error('Erro ao carregar lista de usuários');
     } else {
       setUsers(data || []);
     }
+    setLoading(false);
   };
 
   const handleRegisterUser = async (e: React.FormEvent) => {
@@ -54,7 +58,6 @@ export const Users: React.FC = () => {
     setIsRegistering(true);
 
     try {
-      // Chamada usando a URL completa conforme diretrizes para maior estabilidade
       const response = await fetch('https://ptzfolqjkggiionbddso.supabase.co/functions/v1/manage-users', {
         method: 'POST',
         headers: {
@@ -84,10 +87,7 @@ export const Users: React.FC = () => {
       setViewMode('list');
       fetchUsers();
     } catch (error: any) {
-      const msg = error.message?.toLowerCase().includes('already registered') 
-        ? 'Este e-mail já está em uso no sistema.' 
-        : 'Erro ao cadastrar: ' + error.message;
-      toast.error(msg);
+      toast.error('Erro ao cadastrar: ' + error.message);
     } finally {
       setIsRegistering(false);
     }
@@ -144,7 +144,7 @@ export const Users: React.FC = () => {
   };
 
   const filteredUsers = users.filter(u => 
-    `${u.first_name || ''} ${u.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${u.first_name || ''} ${u.last_name || ''} ${u.email || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (viewMode === 'new') {
@@ -247,19 +247,28 @@ export const Users: React.FC = () => {
           <h2 className="text-3xl font-bold text-slate-100">Usuários</h2>
           <p className="text-slate-400">Gerencie os operadores e permissões do sistema.</p>
         </div>
-        <button 
-          onClick={() => setViewMode('new')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium shadow-lg shadow-blue-900/20 transition-all"
-        >
-          <UserPlus className="w-4 h-4" /> Novo Usuário
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={fetchUsers}
+            className="p-2 text-slate-400 hover:text-white transition-colors"
+            title="Atualizar lista"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button 
+            onClick={() => setViewMode('new')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium shadow-lg shadow-blue-900/20 transition-all"
+          >
+            <UserPlus className="w-4 h-4" /> Novo Usuário
+          </button>
+        </div>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
         <input 
           type="text" 
-          placeholder="Buscar por nome..." 
+          placeholder="Buscar por nome ou e-mail..." 
           className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-3 text-slate-200 focus:outline-none focus:border-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -270,7 +279,7 @@ export const Users: React.FC = () => {
         <table className="w-full text-left">
           <thead className="bg-slate-950 text-slate-500 text-xs uppercase font-bold">
             <tr>
-              <th className="px-6 py-4">Nome Completo</th>
+              <th className="px-6 py-4">Usuário</th>
               <th className="px-6 py-4">Cargo / Permissão</th>
               <th className="px-6 py-4 text-right">Ações</th>
             </tr>
@@ -280,26 +289,32 @@ export const Users: React.FC = () => {
               <tr key={u.id} className="hover:bg-slate-800/50 transition-colors">
                 <td className="px-6 py-4">
                   {editingUser?.id === u.id ? (
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        value={editingUser.first_name || ''}
-                        onChange={e => setEditingUser({...editingUser, first_name: e.target.value})}
-                        className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200"
-                      />
-                      <input 
-                        type="text" 
-                        value={editingUser.last_name || ''}
-                        onChange={e => setEditingUser({...editingUser, last_name: e.target.value})}
-                        className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200"
-                      />
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={editingUser.first_name || ''}
+                          onChange={e => setEditingUser({...editingUser, first_name: e.target.value})}
+                          className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200"
+                        />
+                        <input 
+                          type="text" 
+                          value={editingUser.last_name || ''}
+                          onChange={e => setEditingUser({...editingUser, last_name: e.target.value})}
+                          className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm text-slate-200"
+                        />
+                      </div>
+                      <span className="text-xs text-slate-500">{u.email}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold text-xs">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold text-sm">
                         {u.first_name ? u.first_name[0] : '?'}
                       </div>
-                      <span className="text-slate-200 font-medium">{u.first_name || 'Sem Nome'} {u.last_name || ''}</span>
+                      <div>
+                        <p className="text-slate-200 font-medium">{u.first_name || 'Sem Nome'} {u.last_name || ''}</p>
+                        <p className="text-xs text-slate-500">{u.email || 'E-mail não disponível'}</p>
+                      </div>
                     </div>
                   )}
                 </td>
@@ -336,9 +351,14 @@ export const Users: React.FC = () => {
                 </td>
               </tr>
             ))}
-            {filteredUsers.length === 0 && (
+            {!loading && filteredUsers.length === 0 && (
               <tr>
                 <td colSpan={3} className="px-6 py-10 text-center text-slate-500">Nenhum usuário encontrado.</td>
+              </tr>
+            )}
+            {loading && (
+              <tr>
+                <td colSpan={3} className="px-6 py-10 text-center text-slate-500">Carregando usuários...</td>
               </tr>
             )}
           </tbody>
