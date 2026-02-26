@@ -54,7 +54,7 @@ export const Users: React.FC = () => {
     setIsRegistering(true);
 
     try {
-      // Chamando a Edge Function para criar o usuário no Auth e no Profile simultaneamente
+      // Usando a Edge Function para criar o usuário (Auth + Profile)
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'create',
@@ -109,6 +109,7 @@ export const Users: React.FC = () => {
     if (!confirm('Tem certeza que deseja remover este usuário permanentemente? Isso excluirá o login dele também.')) return;
 
     try {
+      // Usando a Edge Function para deletar o usuário do Auth e do Profile
       const { error } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'delete',
