@@ -831,7 +831,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     <p className="text-xs text-slate-500 uppercase font-bold mb-1">Valor Total</p>
                     <div className="flex flex-col items-end">
                       <p className="text-xl font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
-                      {order.discount && order.discount > 0 && (
+                      {order.discount !== undefined && order.discount > 0 && (
                         <span className="text-[10px] text-emerald-500/70 font-medium">Desc: {order.discount}% (-R$ {formatCurrency(originalTotal * (order.discount / 100))})</span>
                       )}
                     </div>
@@ -899,7 +899,7 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       </td>
                       <td className="px-6 py-4 text-right">
                         <p className="font-bold text-emerald-400">R$ {formatCurrency(order.totalValue)}</p>
-                        {order.discount && order.discount > 0 && <p className="text-[10px] text-emerald-500/70">-{order.discount}%</p>}
+                        {order.discount !== undefined && order.discount > 0 && <p className="text-[10px] text-emerald-500/70">-{order.discount}%</p>}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
