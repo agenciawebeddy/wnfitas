@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, Printer, ScrollText, AlertTriangle, TrendingUp, ShoppingCart, Package } from 'lucide-react';
-import { Order, InventoryItem } from '../types';
+import { Order, InventoryItem, OrderStatus } from '../types';
 
 const data = [
   { name: 'Seg', producao: 4000, faturamento: 2400 },
@@ -16,6 +16,20 @@ interface DashboardProps {
   orders: Order[];
   inventory: InventoryItem[];
 }
+
+const getStatusConfig = (status: OrderStatus) => {
+  switch (status) {
+    case 'orcamento': return { label: 'Orçamento', color: 'bg-slate-800 text-slate-400 border-slate-700' };
+    case 'aprovado': return { label: 'Aprovado', color: 'bg-emerald-950 text-emerald-400 border-emerald-900' };
+    case 'impressao': return { label: 'Plotter', color: 'bg-blue-950 text-blue-400 border-blue-900' };
+    case 'calandra': return { label: 'Calandra', color: 'bg-orange-950 text-orange-400 border-orange-900' };
+    case 'finalizacao': return { label: 'Acabam.', color: 'bg-indigo-950 text-indigo-400 border-indigo-900' };
+    case 'concluido': return { label: 'Finalizado', color: 'bg-green-600 text-white border-green-500' };
+    case 'entregue': return { label: 'Entregue', color: 'bg-slate-700 text-slate-300 border-slate-600' };
+    case 'cancelado': return { label: 'Cancelado', color: 'bg-red-950 text-red-400 border-red-900' };
+    default: return { label: status, color: 'bg-slate-800 text-slate-400' };
+  }
+};
 
 const KPICard = ({ title, value, icon: Icon, color, subtext }: any) => (
   <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm hover:border-slate-700 transition-colors">
@@ -148,25 +162,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, inventory }) => {
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-slate-100 mb-6">Pedidos Recentes</h3>
           <div className="space-y-4">
-            {orders.slice(0, 8).map(order => (
-              <div key={order.id} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg border border-slate-800">
-                <div>
-                  <p className="font-medium text-slate-200 truncate max-w-[150px]">{order.clientName}</p>
-                  <p className="text-xs text-slate-500">OP #{order.opNumber || '---'} • {order.items[0].quantity} un</p>
+            {orders.slice(0, 8).map(order => {
+              const status = getStatusConfig(order.status);
+              return (
+                <div key={order.id} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg border border-slate-800">
+                  <div>
+                    <p className="font-medium text-slate-200 truncate max-w-[150px]">{order.clientName}</p>
+                    <p className="text-xs text-slate-500">OP #{order.opNumber || '---'} • {order.items[0].quantity} un</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase border ${status.color}`}>
+                    {status.label}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase
-                  ${order.status === 'aprovado' ? 'bg-emerald-500/10 text-emerald-500' : 
-                    ['impressao', 'calandra', 'finalizacao'].includes(order.status) ? 'bg-blue-500/10 text-blue-500' :
-                    order.status === 'cancelado' ? 'bg-red-500/10 text-red-500' :
-                    'bg-slate-700 text-slate-400'
-                  }`}>
-                  {order.status === 'impressao' ? 'Plotter' : 
-                   order.status === 'calandra' ? 'Calandra' : 
-                   order.status === 'finalizacao' ? 'Acabam.' : 
-                   order.status}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
