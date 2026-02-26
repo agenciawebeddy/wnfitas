@@ -54,9 +54,14 @@ export const Users: React.FC = () => {
     setIsRegistering(true);
 
     try {
-      // Usando a Edge Function para criar o usuário (Auth + Profile)
-      const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: {
+      // Chamada usando a URL completa conforme diretrizes para maior estabilidade
+      const response = await fetch('https://ptzfolqjkggiionbddso.supabase.co/functions/v1/manage-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
           action: 'create',
           email: newUser.email,
           password: newUser.password,
@@ -65,17 +70,21 @@ export const Users: React.FC = () => {
             last_name: newUser.lastName,
             role: newUser.role
           }
-        }
+        })
       });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro desconhecido na função');
+      }
 
       toast.success('Operador cadastrado com sucesso!');
       setNewUser({ email: '', password: '', firstName: '', lastName: '', role: 'operador' });
       setViewMode('list');
       fetchUsers();
     } catch (error: any) {
-      const msg = error.message?.includes('already registered') 
+      const msg = error.message?.toLowerCase().includes('already registered') 
         ? 'Este e-mail já está em uso no sistema.' 
         : 'Erro ao cadastrar: ' + error.message;
       toast.error(msg);
@@ -109,15 +118,23 @@ export const Users: React.FC = () => {
     if (!confirm('Tem certeza que deseja remover este usuário permanentemente? Isso excluirá o login dele também.')) return;
 
     try {
-      // Usando a Edge Function para deletar o usuário do Auth e do Profile
-      const { error } = await supabase.functions.invoke('manage-users', {
-        body: {
+      const response = await fetch('https://ptzfolqjkggiionbddso.supabase.co/functions/v1/manage-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
           action: 'delete',
           userId: id
-        }
+        })
       });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao remover usuário');
+      }
 
       toast.success('Usuário removido permanentemente');
       fetchUsers();
