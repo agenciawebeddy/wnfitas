@@ -268,7 +268,8 @@ const MainApp: React.FC = () => {
         setOrders(ordersData.map(mapOrder));
       }
 
-      const { data: configData } = await supabase.from('pricing_configs').select('config').eq('user_id', user.id).single();
+      // Buscar a configuração de preços global (a primeira encontrada, já que é ambiente compartilhado)
+      const { data: configData } = await supabase.from('pricing_configs').select('config').limit(1).single();
       if (configData) setPricingConfig(configData.config as any);
     };
 
@@ -277,6 +278,7 @@ const MainApp: React.FC = () => {
 
   const handleSavePricing = async (newConfig: PricingConfig) => {
     setPricingConfig(newConfig);
+    // Salva sempre vinculando ao usuário atual, mas as políticas permitem que outros vejam
     const { error } = await supabase.from('pricing_configs').upsert({
       user_id: user?.id,
       config: newConfig,
