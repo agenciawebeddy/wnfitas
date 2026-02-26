@@ -34,18 +34,20 @@ export const Users: React.FC = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('first_name');
-    
-    if (error) {
-      console.error('Erro ao buscar usuários:', error);
-      toast.error('Erro ao carregar lista de usuários');
-    } else {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('first_name', { ascending: true });
+      
+      if (error) throw error;
       setUsers(data || []);
+    } catch (error: any) {
+      console.error('Erro ao buscar usuários:', error);
+      toast.error('Erro ao carregar lista: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleRegisterUser = async (e: React.FormEvent) => {
@@ -58,11 +60,12 @@ export const Users: React.FC = () => {
     setIsRegistering(true);
 
     try {
+      const session = await supabase.auth.getSession();
       const response = await fetch('https://ptzfolqjkggiionbddso.supabase.co/functions/v1/manage-users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session.data.session?.access_token}`
         },
         body: JSON.stringify({
           action: 'create',
@@ -79,7 +82,7 @@ export const Users: React.FC = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erro desconhecido na função');
+        throw new Error(result.error || 'Erro ao criar usuário');
       }
 
       toast.success('Operador cadastrado com sucesso!');
@@ -118,11 +121,12 @@ export const Users: React.FC = () => {
     if (!confirm('Tem certeza que deseja remover este usuário permanentemente? Isso excluirá o login dele também.')) return;
 
     try {
+      const session = await supabase.auth.getSession();
       const response = await fetch('https://ptzfolqjkggiionbddso.supabase.co/functions/v1/manage-users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session.data.session?.access_token}`
         },
         body: JSON.stringify({
           action: 'delete',
@@ -309,10 +313,12 @@ export const Users: React.FC = () => {
                   ) : (
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold text-sm">
-                        {u.first_name ? u.first_name[0] : '?'}
+                        {u.first_name ? u.first_name[0] : (u.email ? u.email[0].toUpperCase() : '?')}
                       </div>
                       <div>
-                        <p className="text-slate-200 font-medium">{u.first_name || 'Sem Nome'} {u.last_name || ''}</p>
+                        <p className="text-slate-200 font-medium">
+                          {u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}` : 'Usuário sem nome'}
+                        </p>
                         <p className="text-xs text-slate-500">{u.email || 'E-mail não disponível'}</p>
                       </div>
                     </div>
@@ -330,7 +336,7 @@ export const Users: React.FC = () => {
                     </select>
                   ) : (
                     <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded border ${u.role === 'admin' ? 'bg-blue-950 text-blue-400 border-blue-900' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                      {u.role}
+                      {u.role || 'operador'}
                     </span>
                   )}
                 </td>
@@ -353,7 +359,7 @@ export const Users: React.FC = () => {
             ))}
             {!loading && filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-10 text-center text-slate-500">Nenhum usuário encontrado.</td>
+                <td colSpan={3} className="px-6 py-10 text-center text-slate-500">Nenhum usuário encontrado. Verifique se as políticas RLS foram aplicadas.</td>
               </tr>
             )}
             {loading && (
