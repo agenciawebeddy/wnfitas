@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { UserPlus, Mail, Lock, User, Pencil, Trash2, Save, Shield, Search, RefreshCw } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 interface UserProfile {
   id: string;
@@ -14,6 +15,7 @@ interface UserProfile {
 }
 
 export const Users: React.FC = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [newUser, setNewUser] = useState({
@@ -28,9 +30,13 @@ export const Users: React.FC = () => {
   const [viewMode, setViewMode] = useState<'list' | 'new'>('list');
   const [loading, setLoading] = useState(true);
 
+  const isAdmin = currentUser?.email === 'agencia.webeddy@gmail.com';
+
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (isAdmin) {
+      fetchUsers();
+    }
+  }, [isAdmin]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -49,6 +55,16 @@ export const Users: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <Shield className="w-16 h-16 text-red-500 mb-4 opacity-20" />
+        <h2 className="text-2xl font-bold text-slate-100">Acesso Restrito</h2>
+        <p className="text-slate-400">Você não tem permissão para gerenciar usuários.</p>
+      </div>
+    );
+  }
 
   const handleRegisterUser = async (e: React.FormEvent) => {
     e.preventDefault();

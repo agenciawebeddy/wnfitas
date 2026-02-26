@@ -490,6 +490,8 @@ const MainApp: React.FC = () => {
     });
   };
 
+  const isAdmin = user?.email === 'agencia.webeddy@gmail.com';
+
   const renderView = () => {
     switch(currentView) {
       case 'dashboard': return <Dashboard orders={orders} inventory={inventory} />;
@@ -497,7 +499,12 @@ const MainApp: React.FC = () => {
       case 'production': return <Production orders={orders} />;
       case 'inventory': return <Inventory items={inventory} onUpdateStock={handleUpdateStock} onAddItem={handleAddItem} onDeleteItem={handleDeleteItem} />;
       case 'clients': return <Clients clients={clientsWithOrderCounts} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />;
-      case 'users': return <Users />;
+      case 'users': 
+        if (!isAdmin) {
+          setCurrentView('dashboard');
+          return <Dashboard orders={orders} inventory={inventory} />;
+        }
+        return <Users />;
       case 'reports': return <Reports orders={orders} clients={clients} inventory={inventory} />;
       case 'settings': return <Settings pricing={pricingConfig} onSave={handleSavePricing} />;
       case 'calculator': return <Calculator pricingConfig={pricingConfig} />;
@@ -549,7 +556,9 @@ const MainApp: React.FC = () => {
             <NavItem icon={Printer} label="Produção" active={currentView === 'production'} onClick={() => setCurrentView('production')} />
             <NavItem icon={Package} label="Estoque" active={currentView === 'inventory'} onClick={() => setCurrentView('inventory')} />
             <NavItem icon={UsersIcon} label="Clientes" active={currentView === 'clients'} onClick={() => setCurrentView('clients')} />
-            <NavItem icon={UsersIcon} label="Usuários" active={currentView === 'users'} onClick={() => setCurrentView('users')} />
+            {isAdmin && (
+              <NavItem icon={UsersIcon} label="Usuários" active={currentView === 'users'} onClick={() => setCurrentView('users')} />
+            )}
             <NavItem icon={BarChart3} label="Relatórios" active={currentView === 'reports'} onClick={() => setCurrentView('reports')} />
             <NavItem icon={CalcIcon} label="Calculadora" active={currentView === 'calculator'} onClick={() => setCurrentView('calculator')} />
             <NavItem icon={SettingsIcon} label="Configurações" active={currentView === 'settings'} onClick={() => setCurrentView('settings')} />
