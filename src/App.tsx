@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { LayoutDashboard, Users as UsersIcon, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2, Calculator as CalcIcon, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users as UsersIcon, ShoppingCart, Printer, Package, Settings as SettingsIcon, Menu, X, Bell, Plus, History, LogOut, Trash2, Calculator as CalcIcon, BarChart3, StickyNote } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { Dashboard } from './components/Dashboard';
 import { Orders } from './components/Orders';
@@ -8,6 +8,7 @@ import { Settings } from './components/Settings';
 import { Clients } from './components/Clients';
 import { Reports } from './components/Reports';
 import { Users } from './components/Users';
+import { Notes } from './components/Notes';
 import Calculator from './components/Calculator';
 import ConfirmModal from './components/ConfirmModal';
 import StockAlertModal from './components/StockAlertModal';
@@ -508,6 +509,7 @@ const MainApp: React.FC = () => {
       case 'reports': return <Reports orders={orders} clients={clients} inventory={inventory} />;
       case 'settings': return <Settings pricing={pricingConfig} onSave={handleSavePricing} />;
       case 'calculator': return <Calculator pricingConfig={pricingConfig} />;
+      case 'notes': return <Notes />;
       default: return <Dashboard orders={orders} inventory={inventory} />;
     }
   };
@@ -561,6 +563,7 @@ const MainApp: React.FC = () => {
             )}
             <NavItem icon={BarChart3} label="Relatórios" active={currentView === 'reports'} onClick={() => setCurrentView('reports')} />
             <NavItem icon={CalcIcon} label="Calculadora" active={currentView === 'calculator'} onClick={() => setCurrentView('calculator')} />
+            <NavItem icon={StickyNote} label="Anotações" active={currentView === 'notes'} onClick={() => setCurrentView('notes')} />
             <NavItem icon={SettingsIcon} label="Configurações" active={currentView === 'settings'} onClick={() => setCurrentView('settings')} />
           </nav>
           <div className="p-4 border-t border-slate-800">

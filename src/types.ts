@@ -112,3 +112,10 @@ export interface InventoryItem {
   minStock: number;
   location?: string;
 }
+
+export interface Note {
+  id: string;
+  content: string;
+  color: string;
+  created_at: string;
+}
