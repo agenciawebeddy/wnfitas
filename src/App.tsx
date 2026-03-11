@@ -232,7 +232,9 @@ const MainApp: React.FC = () => {
     clientId: o.client_id,
     clientName: o.client_name,
     opNumber: o.op_number,
-    totalValue: o.total_value
+    totalValue: o.total_value,
+    isResale: o.is_resale,
+    resellerName: o.reseller_name
   });
 
   // Cálculo dinâmico de clientes com contagem de pedidos
@@ -380,14 +382,16 @@ const MainApp: React.FC = () => {
   };
 
   const handleAddOrder = async (order: Order) => {
-    const { id, clientId, clientName, totalValue, opNumber, ...rest } = order as any;
+    const { id, clientId, clientName, totalValue, opNumber, isResale, resellerName, ...rest } = order as any;
     const { data, error } = await supabase.from('orders').insert([{ 
       ...rest, 
       user_id: user?.id,
       client_id: clientId,
       client_name: clientName,
       total_value: totalValue,
-      op_number: opNumber || String(Math.floor(Math.random() * 9000) + 1000)
+      op_number: opNumber || String(Math.floor(Math.random() * 9000) + 1000),
+      is_resale: isResale,
+      reseller_name: resellerName
     }]).select();
     
     if (error) {
@@ -454,13 +458,15 @@ const MainApp: React.FC = () => {
   };
 
   const handleUpdateOrder = async (order: Order) => {
-    const { id, clientId, clientName, totalValue, opNumber, ...rest } = order as any;
+    const { id, clientId, clientName, totalValue, opNumber, isResale, resellerName, ...rest } = order as any;
     const { error } = await supabase.from('orders').update({
       ...rest,
       client_id: clientId,
       client_name: clientName,
       total_value: totalValue,
-      op_number: opNumber
+      op_number: opNumber,
+      is_resale: isResale,
+      reseller_name: resellerName
     }).eq('id', id);
     
     if (error) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent, MessageSquare, Palette, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, FileText, Calculator, ArrowRight, Save, Layers, Link as LinkIcon, Check, Info, Pencil, Trash2, Filter, Clock, Printer, Flame, AlertTriangle, Upload, ShoppingCart, Download, Percent, MessageSquare, Palette, LayoutGrid, List, UserCheck } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, Order, OrderItem, PricingConfig, FinishingType, OrderFinishing, OrderStatus, Client, InventoryItem, ProductType } from '../types';
 import { jsPDF } from 'jspdf';
@@ -68,6 +68,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   const [observations, setObservations] = useState('');
   const [backType, setBackType] = useState<'mesma_arte' | 'cor'>('mesma_arte');
   const [backColor, setBackColor] = useState('');
+  const [isResale, setIsResale] = useState(false);
+  const [resellerName, setResellerName] = useState('');
 
   const createInitialFinishingsState = (orderQty: number) => {
     const state: FinishingsMap = {};
@@ -210,6 +212,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setObservations('');
     setBackType('mesma_arte');
     setBackColor('');
+    setIsResale(false);
+    setResellerName('');
     setFinishings(createInitialFinishingsState(100));
   };
 
@@ -220,6 +224,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     setCurrentStatus(order.status);
     setDiscount(order.discount || 0);
     setObservations(order.observations || '');
+    setIsResale(order.isResale || false);
+    setResellerName(order.resellerName || '');
     const item = order.items[0];
     setProductType(item.productType || 'tirante');
     setWidth(item.width);
@@ -271,6 +277,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
       discount: discount,
       calculation: calc,
       observations: observations,
+      isResale: isResale,
+      resellerName: isResale ? resellerName : '',
       items: [{ 
         productType, 
         width, 
@@ -320,6 +328,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
     doc.text('DADOS DO CLIENTE', 14, 50);
     doc.setFontSize(11);
     doc.text(`Cliente: ${order.clientName}`, 14, 58);
+    if (order.isResale && order.resellerName) {
+      doc.text(`Revendedor: ${order.resellerName}`, 14, 64);
+    }
 
     // Product Info
     doc.setFontSize(14);
@@ -449,6 +460,32 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-slate-950 border border-slate-800 rounded-lg">
+                    <input 
+                      type="checkbox" 
+                      id="isResale"
+                      checked={isResale}
+                      onChange={e => setIsResale(e.target.checked)}
+                      className="w-5 h-5 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="isResale" className="text-sm font-medium text-slate-300 cursor-pointer flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-blue-400" /> Pedido de Revenda?
+                    </label>
+                  </div>
+                  {isResale && (
+                    <div className="animate-in slide-in-from-left duration-200">
+                      <input 
+                        type="text" 
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Nome do Revendedor"
+                        value={resellerName}
+                        onChange={e => setResellerName(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -818,11 +855,19 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">OP #{order.opNumber}</span>
                       <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${status.color}`}>{status.label}</span>
+                      {order.isResale && (
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-blue-900/30 text-blue-400 border-blue-800">Revenda</span>
+                      )}
                     </div>
                     <p className="font-bold text-slate-100 text-lg">{order.clientName}</p>
                     <p className="text-xs text-slate-500">
                       {order.items[0].productType === 'tirante' ? 'Tirante' : order.items[0].productType === 'tirante_copo' ? 'Tirante Copo' : order.items[0].productType === 'chaveiro' ? 'Chaveiro' : 'Pulseira'} • {order.items[0].quantity} un • {order.items[0].width}
                     </p>
+                    {order.isResale && order.resellerName && (
+                      <p className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
+                        <UserCheck className="w-3 h-3" /> Revendedor: {order.resellerName}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -885,10 +930,20 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     <tr key={order.id} className="hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4">
                         <p className="font-mono text-blue-400 text-sm mb-1">#{order.opNumber}</p>
-                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${status.color}`}>{status.label}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border w-fit ${status.color}`}>{status.label}</span>
+                          {order.isResale && (
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded border bg-blue-900/30 text-blue-400 border-blue-800 w-fit">Revenda</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-bold text-slate-200">{order.clientName}</p>
+                        {order.isResale && order.resellerName && (
+                          <p className="text-[10px] text-blue-400 flex items-center gap-1">
+                            <UserCheck className="w-3 h-3" /> {order.resellerName}
+                          </p>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm text-slate-300">{order.items[0].productType.toUpperCase()} • {order.items[0].width}</p>

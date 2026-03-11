@@ -101,6 +101,8 @@ export interface Order {
   discount?: number;
   opNumber?: string;
   observations?: string;
+  isResale?: boolean;
+  resellerName?: string;
 }
 
 export interface InventoryItem {
