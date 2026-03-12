@@ -21,6 +21,43 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
+  // Helper to format CNPJ/CPF
+  const formatDocument = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 11) {
+      // CPF: 000.000.000-00
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      // CNPJ: 00.000.000/0000-00
+      return digits
+        .substring(0, 14)
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+  };
+
+  // Helper to format Phone
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 10) {
+      // (00) 0000-0000
+      return digits
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+    } else {
+      // (00) 00000-0000
+      return digits
+        .substring(0, 11)
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2');
+    }
+  };
+
   const handleEdit = (client: Client) => {
     setEditingId(client.id);
     setName(client.name);
@@ -32,7 +69,7 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
 
   const handleSave = () => {
     if (!name || !cnpj) {
-      alert("Nome e CNPJ são obrigatórios.");
+      alert("Nome e CNPJ/CPF são obrigatórios.");
       return;
     }
 
@@ -106,9 +143,10 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
                 <input 
                   type="text" 
                   value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
+                  onChange={(e) => setCnpj(formatDocument(e.target.value))}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="00.000.000/0001-00"
+                  placeholder="00.000.000/0000-00 ou 000.000.000-00"
+                  maxLength={18}
                 />
               </div>
             </div>
@@ -121,9 +159,10 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
                   <input 
                     type="text" 
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
                   />
                 </div>
               </div>
