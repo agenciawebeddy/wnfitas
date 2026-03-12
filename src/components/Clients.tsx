@@ -21,14 +21,15 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
-  // Helper to format CNPJ/CPF
+  // Improved Helper to format CNPJ/CPF
   const formatDocument = (value: string) => {
     const digits = value.replace(/\D/g, '');
+    
     if (digits.length <= 11) {
       // CPF: 000.000.000-00
       return digits
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/^(\d{3})(\d)/, '$1.$2')
+        .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
         .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     } else {
       // CNPJ: 00.000.000/0000-00
@@ -37,23 +38,24 @@ export const Clients: React.FC<ClientsProps> = ({ clients, onAddClient, onUpdate
         .replace(/^(\d{2})(\d)/, '$1.$2')
         .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
         .replace(/\.(\d{3})(\d)/, '.$1/$2')
-        .replace(/(\d{4})(\d)/, '$1-$2');
+        .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
     }
   };
 
-  // Helper to format Phone
+  // Improved Helper to format Phone
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
+    
     if (digits.length <= 10) {
       // (00) 0000-0000
       return digits
-        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/^(\d{2})(\d)/, '($1) $2')
         .replace(/(\d{4})(\d)/, '$1-$2');
     } else {
       // (00) 00000-0000
       return digits
         .substring(0, 11)
-        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/^(\d{2})(\d)/, '($1) $2')
         .replace(/(\d{5})(\d)/, '$1-$2');
     }
   };
