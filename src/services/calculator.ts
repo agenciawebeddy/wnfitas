@@ -12,18 +12,11 @@ export const calculateProduction = (
   width: LanyardWidth,
   quantity: number,
   config?: PricingConfig,
-  itemsPerRow: number = 5 
+  itemsPerRow: number = 5,
+  paperWidthMm: number = 150
 ): ProductionCalculation => {
   const lengthMeters = PRODUCT_LENGTHS[productType];
-  
-  let paperWidthMm = 150;
   const effectiveItemsPerRow = itemsPerRow > 0 ? itemsPerRow : 5;
-
-  if ((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') {
-    paperWidthMm = 220;
-  } else {
-    paperWidthMm = 150; 
-  }
   
   const totalTapeMeters = quantity * lengthMeters;
   const paperMetersPerSide = totalTapeMeters / effectiveItemsPerRow;
@@ -31,7 +24,8 @@ export const calculateProduction = (
   const rawPaperConsumption = totalPrintMeters / effectiveItemsPerRow;
   const paperConsumptionMeters = rawPaperConsumption * 1.05; 
 
-  const paperCost = paperConsumptionMeters * (paperWidthMm === 220 ? 1.50 : 1.10); 
+  // Custo do papel baseado na largura da bobina (20cm/22cm é mais caro que 15cm)
+  const paperCost = paperConsumptionMeters * (paperWidthMm >= 200 ? 1.50 : 1.10); 
   const tapeCost = totalTapeMeters * 0.40; 
   
   const estimatedCost = paperCost + tapeCost;

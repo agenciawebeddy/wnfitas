@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Calculator as CalcIcon, Ruler, Printer, Flame, Clock, Package, RefreshCw, Layers } from 'lucide-react';
+import { Calculator as CalcIcon, Ruler, Printer, Flame, Clock, Package, RefreshCw, Layers, Disc } from 'lucide-react';
 import { calculateProduction } from '../services/calculator';
 import { LanyardWidth, ProductType, PricingConfig } from '../types';
 
@@ -14,12 +14,13 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
   const [width, setWidth] = useState<LanyardWidth>('20mm');
   const [quantity, setQuantity] = useState<number>(100);
   const [itemsPerRow, setItemsPerRow] = useState<number>(5);
+  const [bobbinSize, setBobbinSize] = useState<number>(150); // 150mm ou 200mm
   
-  const [results, setResults] = useState(calculateProduction(productType, width, quantity, pricingConfig, itemsPerRow));
+  const [results, setResults] = useState(calculateProduction(productType, width, quantity, pricingConfig, itemsPerRow, bobbinSize));
 
   useEffect(() => {
-    setResults(calculateProduction(productType, width, quantity, pricingConfig, itemsPerRow));
-  }, [productType, width, quantity, pricingConfig, itemsPerRow]);
+    setResults(calculateProduction(productType, width, quantity, pricingConfig, itemsPerRow, bobbinSize));
+  }, [productType, width, quantity, pricingConfig, itemsPerRow, bobbinSize]);
 
   const formatNumber = (val: number) => val.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 
@@ -68,6 +69,21 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-medium text-slate-500 uppercase mb-2">Tamanho da Bobina</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[150, 200].map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setBobbinSize(size)}
+                    className={`py-2.5 rounded-lg text-sm font-bold transition-all border flex items-center justify-center gap-2 ${bobbinSize === size ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/20' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'}`}
+                  >
+                    <Disc className="w-4 h-4" /> {size / 10}cm
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 uppercase mb-1.5">Quantidade</label>
@@ -94,7 +110,7 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
           </div>
 
           <button 
-            onClick={() => { setQuantity(100); setProductType('tirante'); setWidth('20mm'); setItemsPerRow(5); }}
+            onClick={() => { setQuantity(100); setProductType('tirante'); setWidth('20mm'); setItemsPerRow(5); setBobbinSize(150); }}
             className="w-full py-3 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm"
           >
             <RefreshCw className="w-4 h-4" /> Resetar Valores
@@ -180,7 +196,7 @@ const Calculator: React.FC<CalculatorProps> = ({ pricingConfig }) => {
               </div>
               <div className="flex items-center gap-3 text-slate-500 text-xs mt-2">
                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span>Bobina de {((productType === 'tirante' || productType === 'tirante_copo') && width === '25mm') ? '22cm' : '15cm'}.</span>
+                <span>Bobina de {bobbinSize / 10}cm selecionada.</span>
               </div>
             </div>
           </div>
