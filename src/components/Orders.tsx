@@ -84,12 +84,16 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
   useEffect(() => {
     setFinishings(prev => {
         const newState = { ...prev };
+        let changed = false;
         pricingConfig.finishings.forEach(f => {
-            newState[f.name] = { selected: false, quantity: quantity };
+            if (!newState[f.name]) {
+                newState[f.name] = { selected: false, quantity: quantity };
+                changed = true;
+            }
         });
-        return newState;
+        return changed ? newState : prev;
     });
-  }, [quantity, pricingConfig.finishings]);
+  }, [pricingConfig.finishings, quantity]);
 
   const [calc, setCalc] = useState(calculateProduction('tirante', '20mm', 100, pricingConfig));
 
@@ -580,7 +584,22 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                       type="number" 
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
                       value={quantity}
-                      onChange={e => setQuantity(Number(e.target.value))}
+                      onChange={e => {
+                        const newQty = Number(e.target.value);
+                        const oldQty = quantity;
+                        setQuantity(newQty);
+                        setFinishings(prev => {
+                          const newState = { ...prev };
+                          Object.keys(newState).forEach(k => {
+                            // Sincroniza a quantidade se ela for igual à quantidade anterior do pedido
+                            // ou se o item não estiver selecionado (mantém o padrão)
+                            if (newState[k].quantity === oldQty || !newState[k].selected) {
+                              newState[k].quantity = newQty;
+                            }
+                          });
+                          return newState;
+                        });
+                      }}
                     />
                   </div>
                   <div>
