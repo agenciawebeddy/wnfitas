@@ -383,6 +383,8 @@ const MainApp: React.FC = () => {
 
   const handleAddOrder = async (order: Order) => {
     const { id, clientId, clientName, totalValue, opNumber, isResale, resellerName, ...rest } = order as any;
+    
+    // 1. Inserir o pedido no banco
     const { data, error } = await supabase.from('orders').insert([{ 
       ...rest, 
       user_id: user?.id,
@@ -404,42 +406,59 @@ const MainApp: React.FC = () => {
       setOrders([newOrder, ...orders]);
       toast.success('Pedido criado com sucesso!');
 
+      // 2. Lógica de Dedução de Estoque
       const item = order.items[0];
       const calc = order.calculation;
       
+      // Helper para encontrar item no estoque de forma flexível
       const findStockItem = (namePart: string, category: string) => {
         return inventory.find(i => 
-          i.name.toLowerCase().includes(namePart.toLowerCase()) || 
-          (i.category === category && i.name.toLowerCase().includes(item.width.toLowerCase()))
+          i.category === category && 
+          i.name.toLowerCase().includes(namePart.toLowerCase())
         );
       };
 
-      const deductions: { item: InventoryItem | undefined, qty: number }[] = [
-        { item: findStockItem(`Fita Poliéster ${item.width}`, 'fita'), qty: calc.totalLinearMeters },
-        { item: inventory.find(i => i.category === 'papel' && i.name.includes(item.width === '25mm' ? '22cm' : '15cm')), qty: calc.paperConsumptionMeters }
-      ];
+      const deductions: { item: InventoryItem | undefined, qty: number }[] = [];
 
+      // Fita
+      deductions.push({ 
+        item: findStockItem(item.width, 'fita'), 
+        qty: calc.totalLinearMeters 
+      });
+
+      // Papel
+      const paperWidth = (item.width === '25mm') ? '22cm' : '15cm';
+      deductions.push({ 
+        item: findStockItem(paperWidth, 'papel'), 
+        qty: calc.paperConsumptionMeters 
+      });
+
+      // Acabamentos
       item.finishings.forEach(f => {
-        const stockItem = inventory.find(i => 
-          i.name.toLowerCase().includes(f.type.toLowerCase()) || 
-          (i.category === 'acessorio' && i.name.toLowerCase().includes(f.type.toLowerCase()))
-        );
-        deductions.push({ item: stockItem, qty: f.quantity });
+        deductions.push({ 
+          item: findStockItem(f.type, 'acessorio'), 
+          qty: f.quantity 
+        });
       });
 
       const criticalItemsFound: InventoryItem[] = [];
 
+      // Executar as deduções no banco de dados
       for (const d of deductions) {
         if (d.item) {
           const newQty = Math.max(0, d.item.quantity - d.qty);
-          await supabase.from('inventory').update({ quantity: newQty }).eq('id', d.item.id);
+          const { error: updateError } = await supabase
+            .from('inventory')
+            .update({ quantity: newQty })
+            .eq('id', d.item.id);
           
-          if (newQty <= d.item.minStock) {
+          if (!updateError && newQty <= d.item.minStock) {
             criticalItemsFound.push({ ...d.item, quantity: newQty });
           }
         }
       }
 
+      // 3. Mostrar alerta se houver itens críticos
       if (criticalItemsFound.length > 0) {
         setStockAlertModal({
           isOpen: true,
@@ -447,6 +466,7 @@ const MainApp: React.FC = () => {
         });
       }
 
+      // 4. Atualizar o estado local do estoque para refletir as mudanças
       const { data: updatedInventory } = await supabase.from('inventory').select('*').order('name');
       if (updatedInventory) {
         setInventory(updatedInventory.map((item: any) => ({
@@ -491,7 +511,6 @@ const MainApp: React.FC = () => {
           setOrders(orders.filter(o => o.id !== id));
           toast.success('Pedido removido');
         }
-        confirmModal.onConfirm();
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
     });
