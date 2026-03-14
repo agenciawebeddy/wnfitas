@@ -502,14 +502,74 @@ const MainApp: React.FC = () => {
     setConfirmModal({
       isOpen: true,
       title: 'Excluir Pedido',
-      message: 'Tem certeza que deseja excluir este pedido? Esta ação é irreversível.',
+      message: 'Tem certeza que deseja excluir este pedido? Os insumos consumidos serão devolvidos ao estoque.',
       onConfirm: async () => {
+        const orderToDelete = orders.find(o => o.id === id);
+        
+        if (orderToDelete) {
+          // 1. Lógica de Devolução ao Estoque
+          const item = orderToDelete.items[0];
+          const calc = orderToDelete.calculation;
+          
+          const findStockItem = (namePart: string, category: string) => {
+            return inventory.find(i => 
+              i.category === category && 
+              i.name.toLowerCase().includes(namePart.toLowerCase())
+            );
+          };
+
+          const returns: { item: InventoryItem | undefined, qty: number }[] = [];
+
+          // Fita
+          returns.push({ 
+            item: findStockItem(item.width, 'fita'), 
+            qty: calc.totalLinearMeters 
+          });
+
+          // Papel
+          const paperWidth = (item.width === '25mm') ? '22cm' : '15cm';
+          returns.push({ 
+            item: findStockItem(paperWidth, 'papel'), 
+            qty: calc.paperConsumptionMeters 
+          });
+
+          // Acabamentos
+          item.finishings.forEach(f => {
+            returns.push({ 
+              item: findStockItem(f.type, 'acessorio'), 
+              qty: f.quantity 
+            });
+          });
+
+          // Executar as devoluções no banco de dados
+          for (const r of returns) {
+            if (r.item) {
+              const newQty = r.item.quantity + r.qty;
+              await supabase
+                .from('inventory')
+                .update({ quantity: newQty })
+                .eq('id', r.item.id);
+            }
+          }
+        }
+
+        // 2. Excluir o pedido
         const { error } = await supabase.from('orders').delete().eq('id', id);
+        
         if (error) {
           toast.error('Erro ao excluir pedido');
         } else {
           setOrders(orders.filter(o => o.id !== id));
-          toast.success('Pedido removido');
+          toast.success('Pedido removido e estoque atualizado');
+          
+          // 3. Atualizar o estado local do estoque
+          const { data: updatedInventory } = await supabase.from('inventory').select('*').order('name');
+          if (updatedInventory) {
+            setInventory(updatedInventory.map((item: any) => ({
+              ...item,
+              minStock: item.min_stock
+            })));
+          }
         }
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
