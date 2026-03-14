@@ -864,6 +864,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
           {filteredOrders.map(order => {
             const status = getStatusConfig(order.status);
             const originalTotal = order.items[0].unitPrice * order.items[0].quantity;
+            const isFinalization = order.status === 'finalizacao';
+            
             return (
               <div key={order.id} className="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-700 transition-colors group">
                 <div className="flex items-center gap-4">
@@ -917,8 +919,9 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                     </button>
                     <button 
                       onClick={() => onDeleteOrder(order.id)} 
-                      className="p-2.5 bg-slate-800 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded-lg transition-all"
-                      title="Excluir Pedido"
+                      disabled={isFinalization}
+                      className={`p-2.5 bg-slate-800 rounded-lg transition-all ${isFinalization ? 'opacity-20 cursor-not-allowed' : 'hover:bg-red-900/30 text-slate-400 hover:text-red-400'}`}
+                      title={isFinalization ? "Pedidos em finalização não podem ser excluídos" : "Excluir Pedido"}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -945,6 +948,8 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
               <tbody className="divide-y divide-slate-800">
                 {filteredOrders.map(order => {
                   const status = getStatusConfig(order.status);
+                  const isFinalization = order.status === 'finalizacao';
+                  
                   return (
                     <tr key={order.id} className="hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4">
@@ -983,7 +988,12 @@ export const Orders: React.FC<OrdersProps> = ({ onNavigate, pricingConfig, order
                           <button onClick={() => handleEdit(order)} className="p-2 hover:bg-blue-900/30 rounded text-slate-500 hover:text-blue-400 transition" title="Editar">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => onDeleteOrder(order.id)} className="p-2 hover:bg-red-900/30 rounded text-slate-500 hover:text-red-400 transition" title="Excluir">
+                          <button 
+                            onClick={() => onDeleteOrder(order.id)} 
+                            disabled={isFinalization}
+                            className={`p-2 rounded transition ${isFinalization ? 'opacity-20 cursor-not-allowed' : 'hover:bg-red-900/30 text-slate-500 hover:text-red-400'}`} 
+                            title={isFinalization ? "Pedidos em finalização não podem ser excluídos" : "Excluir"}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
